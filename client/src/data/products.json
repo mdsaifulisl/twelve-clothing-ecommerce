@@ -1,0 +1,285 @@
+[
+  {
+    "id": "1",
+    "title": "Mens Maroon Panjabi",
+    "price": 3839,
+    "discount": 0,
+    "category": "Men",
+    "subCategory": "Panjabi",
+    "productType": "Mens Embroidery Panjabi",
+    "image": [
+      "https://images.unsplash.com/photo-1621452773781-0f992fd1f5cb?auto=format&fit=crop&q=80&w=600",
+      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&q=80&w=600"
+    ],
+    "color": "MAROON",
+    "availableSizes": ["S", "M", "L", "XL", "2XL", "3XL"],
+    "description": "Crafted from premium cotton blend silk fabric with detailed embroidery work on neck and cuffs. Perfect for festive celebrations and special family gatherings.",
+    "material": "Cotton Silk Blend",
+    "fit": "Regular Fit",
+    "careInstructions": [
+      "Wash dark colors separately",
+      "Do not bleach",
+      "Wash with mild detergent",
+      "Cold water soft wash",
+      "Warm iron inside out"
+    ],
+    "sku": "RA-PNJ-TW26-101-MAR"
+  },
+  {
+    "id": "2",
+    "title": "Mens Peach Panjabi",
+    "price": 3179,
+    "discount": 0,
+    "category": "Men",
+    "subCategory": "Panjabi",
+    "productType": "Mens Basic Panjabi",
+    "image": [
+      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&q=80&w=600"
+    ],
+    "color": "PEACH",
+    "availableSizes": ["S", "M", "L", "XL", "2XL", "3XL"],
+    "description": "Minimalist peach basic panjabi with refined placket details. Designed for all-day comfort and elegant casual wear.",
+    "material": "100% Fine Cotton",
+    "fit": "Slim Fit",
+    "careInstructions": [
+      "Machine wash cold",
+      "Do not bleach",
+      "Line dry in shade",
+      "Medium iron"
+    ],
+    "sku": "RA-PNJ-TW26-102-PCH"
+  },
+  {
+    "id": "3",
+    "title": "Mens Parmesan Panjabi",
+    "price": 2739,
+    "discount": 20,
+    "category": "Men",
+    "subCategory": "Panjabi",
+    "productType": "Mens Karchupi Panjabi",
+    "image": [
+      "https://images.unsplash.com/photo-1543332164-6e82f355badc?auto=format&fit=crop&q=80&w=600"
+    ],
+    "color": "PARMESAN",
+    "availableSizes": ["S", "M", "L", "XL", "2XL", "3XL"],
+    "description": "Elegant parmesan panjabi embellished with handcrafted Karchupi design. Brings a royal subtle touch to traditional attire.",
+    "material": "Jacquard Silk",
+    "fit": "Regular Fit",
+    "careInstructions": [
+      "Dry clean only",
+      "Do not bleach",
+      "Cool iron on reverse"
+    ],
+    "sku": "RA-PNJ-TW26-103-PAR"
+  },
+  {
+    "id": "4",
+    "title": "Womens Designer Three Piece",
+    "price": 4500,
+    "discount": 10,
+    "category": "Women",
+    "subCategory": "Three Piece",
+    "productType": "Three Piece",
+    "image": [
+      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&q=80&w=600"
+    ],
+    "color": "BLUE",
+    "availableSizes": ["M", "L", "XL"],
+    "description": "Gorgeous 3-piece set featuring screen-printed Kameez, contrasting Dupatta, and matching trousers with delicate embroidery.",
+    "material": "Viscose Organza",
+    "fit": "Relaxed Fit",
+    "careInstructions": [
+      "Dry clean recommended",
+      "Cold water hand wash separately",
+      "Do not wring",
+      "Warm iron"
+    ],
+    "sku": "RA-3PC-TW26-201-BLU"
+  },
+  {
+    "id": "5",
+    "title": "Mens Casual Cotton Shirt",
+    "price": 1850,
+    "discount": 0,
+    "category": "Men",
+    "subCategory": "Casual Shirt",
+    "productType": "Casual Shirt",
+    "image": [
+      "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=600"
+    ],
+    "color": "WHITE",
+    "availableSizes": ["M", "L", "XL", "2XL"],
+    "description": "Breathable pure cotton casual shirt with button-down collar. A versatile wardrobe essential for smart-casual events.",
+    "material": "100% Breathable Cotton",
+    "fit": "Tailored Fit",
+    "careInstructions": [
+      "Machine wash gentle cycle",
+      "Tumble dry low",
+      "Warm iron if needed"
+    ],
+    "sku": "RA-SHT-TW26-301-WHT"
+  },
+  {
+    "id": "6",
+    "title": "Traditional Jamdani Sharee",
+    "price": 8500,
+    "discount": 15,
+    "category": "Women",
+    "subCategory": "Sharee",
+    "productType": "Sharee",
+    "image": [
+      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=600"
+    ],
+    "color": "RED",
+    "availableSizes": [],
+    "description": "Handloom woven authentic Jamdani saree with intricate golden motif work throughout the body and pallu.",
+    "material": "Fine Cotton Silk Jamdani",
+    "fit": "Free Size (12 Hand)",
+    "careInstructions": [
+      "Dry clean only",
+      "Store wrapped in muslin fabric",
+      "Avoid direct sunlight"
+    ],
+    "sku": "RA-SAR-TW26-401-RED"
+  },
+  {
+    "id": "7",
+    "title": "Womens Olive Kalidar Gown",
+    "price": 5269,
+    "discount": 0,
+    "category": "Women",
+    "subCategory": "Three Piece",
+    "productType": "Gown",
+    "image": [
+      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&q=80&w=600",
+      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&q=80&w=600"
+    ],
+    "color": "OLIVE",
+    "availableSizes": ["S", "M", "L", "XL", "2XL"],
+    "description": "Crafted from booster silk fabric featuring screen print and manual embroidery work with a flared Kalidar silhouette.",
+    "material": "Booster Silk",
+    "fit": "Regular Fit",
+    "careInstructions": [
+      "Wash dark colors separately",
+      "Do not bleach",
+      "Wash with mild detergent",
+      "Cold water soft wash",
+      "Do not tumble dry",
+      "Color bleed issues wash separately"
+    ],
+    "sku": "RA-GWN-TW26-10DP-113312"
+  },
+  {
+    "id": "8",
+    "title": "Boys Royal Blue Embroidery Panjabi",
+    "price": 1850,
+    "discount": 0,
+    "category": "Kids",
+    "subCategory": "Boys Panjabi",
+    "productType": "Boys Panjabi",
+    "image": [
+      "https://images.unsplash.com/photo-1621452773781-0f992fd1f5cb?auto=format&fit=crop&q=80&w=600"
+    ],
+    "color": "ROYAL BLUE",
+    "availableSizes": ["2-3Y", "4-5Y", "6-7Y", "8-9Y", "10-11Y"],
+    "description": "Vibrant royal blue kid's Panjabi crafted from soft premium cotton, featuring delicate neck embroidery for festive wear.",
+    "material": "100% Cotton",
+    "fit": "Regular Fit",
+    "careInstructions": [
+      "Hand wash cold",
+      "Do not bleach",
+      "Warm iron inside out"
+    ],
+    "sku": "RA-KID-PNJ-501-BLU"
+  },
+  {
+    "id": "9",
+    "title": "Boys Festive Silk Kabli Set",
+    "price": 2450,
+    "discount": 10,
+    "category": "Kids",
+    "subCategory": "Boys Kabli",
+    "productType": "Boys Kabli",
+    "image": [
+      "https://images.unsplash.com/photo-1543332164-6e82f355badc?auto=format&fit=crop&q=80&w=600"
+    ],
+    "color": "MAROON",
+    "availableSizes": ["4-5Y", "6-7Y", "8-9Y", "10-11Y", "12-13Y"],
+    "description": "Premium silk blend Kabli set with matching waistcoat design for a smart traditional festive look.",
+    "material": "Cotton Silk Blend",
+    "fit": "Regular Fit",
+    "careInstructions": [
+      "Dry clean recommended",
+      "Cool iron on reverse"
+    ],
+    "sku": "RA-KID-KBL-502-MAR"
+  },
+  {
+    "id": "10",
+    "title": "Girls Designer Floral Frock",
+    "price": 2150,
+    "discount": 0,
+    "category": "Kids",
+    "subCategory": "Girls Frock",
+    "productType": "Girls Frock",
+    "image": [
+      "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&q=80&w=600"
+    ],
+    "color": "PINK",
+    "availableSizes": ["2-3Y", "4-5Y", "6-7Y", "8-9Y"],
+    "description": "Adorable layered pink frock embellished with soft net fabric and floral thread motifs, ideal for parties.",
+    "material": "Cotton & Organza Net",
+    "fit": "Comfort Fit",
+    "careInstructions": [
+      "Soft hand wash",
+      "Do not wring",
+      "Line dry in shade"
+    ],
+    "sku": "RA-KID-FRK-601-PNK"
+  },
+  {
+    "id": "11",
+    "title": "Girls Embroidered Three Piece Set",
+    "price": 2950,
+    "discount": 15,
+    "category": "Kids",
+    "subCategory": "Girls Three Piece",
+    "productType": "Girls Three Piece",
+    "image": [
+      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&q=80&w=600"
+    ],
+    "color": "YELLOW",
+    "availableSizes": ["4-5Y", "6-7Y", "8-9Y", "10-11Y"],
+    "description": "Festive yellow 3-piece set containing embroidered Kameez, comfortable Salwar, and light Dupatta.",
+    "material": "Viscose Cotton",
+    "fit": "Regular Fit",
+    "careInstructions": [
+      "Wash separately",
+      "Cold water soft wash",
+      "Medium iron"
+    ],
+    "sku": "RA-KID-3PC-602-YEL"
+  },
+  {
+    "id": "12",
+    "title": "Traditional Metal Panjabi Buttons",
+    "price": 450,
+    "discount": 0,
+    "category": "Accessories",
+    "subCategory": "Buttons",
+    "productType": "Panjabi Button",
+    "image": [
+      "https://images.unsplash.com/photo-1608256246200-53e635b5b65f?auto=format&fit=crop&q=80&w=600"
+    ],
+    "color": "GOLDEN",
+    "availableSizes": [],
+    "description": "Exquisite metal buttons designed specifically to elevate the look of traditional Panjabis and Kablis.",
+    "material": "Brass Alloy",
+    "fit": "Standard Set",
+    "careInstructions": [
+      "Keep away from water and perfume",
+      "Store in dry box"
+    ],
+    "sku": "RA-ACC-BTN-801"
+  }
+]

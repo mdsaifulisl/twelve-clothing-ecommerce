@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-cardHeader: #34B38A;
+  --color-cardBody: #62C4A2;
+  --color-cardAccent: #134E39;
+  --color-primary: #111827;
+  --color-surface: #F9FAFB;
+  --color-borderLight: #E5E7EB;
+  
+  --font-sans: 'Inter', 'Hind Siliguri', sans-serif;
+  --font-heading: 'Poppins', 'Hind Siliguri', sans-serif;
+}

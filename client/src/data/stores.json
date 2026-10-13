@@ -1,0 +1,36 @@
+[
+  {
+    "id": "1",
+    "division": "Barishal Division",
+    "name": "Barishal",
+    "address": "Faiz Shotaiyu Holding No.- 49, Nawab Bari, Police Line Road, Ward No.- 16, Barishal City Corporation, Sadar, Barishal",
+    "phone": "01847425569",
+    "offDay": "Monday",
+    "openingTime": "10:00 AM",
+    "closingTime": "9:00 PM",
+    "mapLink": "https://maps.google.com"
+  },
+  {
+    "id": "2",
+    "division": "Chattogram Division",
+    "name": "Chattogram",
+    "address": "Shop No: 201, 202, 203, 205, 225, 226, 1st Floor, Concord Mueen Square, Panchlaish, Chattogram",
+    "phone": "01847-425567",
+    "offDay": "Sunday",
+    "openingTime": "10:00 AM",
+    "closingTime": "9:00 PM",
+    "mapLink": "https://maps.google.com"
+  },
+  {
+    "id": "3",
+    "division": "Dhaka Division",
+    "name": "Uttara Flagship",
+    "address": "House # 12, Road # 11, Sector # 1, Uttara, Dhaka - 1230",
+    "phone": "01847-425568",
+    "offDay": "Tuesday",
+    "openingTime": "10:00 AM",
+    "closingTime": "10:00 PM",
+    "mapLink": "https://maps.google.com"
+  }
+]
+
