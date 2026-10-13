@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useCart } from '../../../features/cart/useCart';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ShoppingBag, ArrowLeft, CheckCircle2, MapPin, Phone, User, Home, CreditCard } from 'lucide-react';
 
 export const CheckoutPage: React.FC = () => {
   const { items, totalPrice, emptyCart } = useCart();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   // ফর্ম স্টেট
   const [formData, setFormData] = useState({
