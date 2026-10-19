@@ -62,6 +62,8 @@ export const ItemDetailsPage: React.FC = () => {
       image: product.image[0] || '',
       size: selectedSize || 'Free Size',
       quantity: quantity,
+      color: '',
+      sku: ''
     });
   };
 
