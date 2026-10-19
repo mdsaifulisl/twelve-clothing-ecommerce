@@ -7,52 +7,18 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+node_modules
+dist
+dist-ssr
+*.local
 
-# Dependency directories
-node_modules/
-jspm_packages/
-
-# TypeScript cache
-*.tsbuildinfo
-
-# Build and Output directories
-dist/
-dist-ssr/
-build/
-out/
-.next/
-.nuxt/
-.vuepress/dist/
-.output/
-
-# Environment variables & secrets (অত্যন্ত গুরুত্বপূর্ণ!)
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.env
-
-# Editor & IDE directories
+# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea/
+.idea
+.DS_Store
 *.suo
-*.ntvsopt
+*.ntvs*
 *.njsproj
 *.sln
 *.sw?
-.DS_Store
-
-# Testing coverage
-coverage/
-.nyc_output/
-
-# Temporary files & cache
-.eslintcache
-.stylelintcache
-*.tgz
-.cache/
-.parcel-cache/
