@@ -38,19 +38,25 @@ export const Settings: React.FC = () => {
 
   const [isSaved, setIsSaved] = useState(false);
 
-  // সেটিংস স্টেটসমূহ
-  const [storeInfo, setStoreInfo] = useState({
-    storeName: "Twelve Clothing",
-    tagline: "Elegance in Every Thread",
-    contactEmail: "support@twelveclothing.com",
-    contactPhone: "+880 1700-112233",
-    address: "House 45, Road 11, Banani, Dhaka",
-  });
+  // সেটিংস স্টেটসমূহ (সোশ্যাল মিডিয়া লিঙ্কসহ আপডেট করা হয়েছে)
+const [storeInfo, setStoreInfo] = useState({
+  storeName: "Twelve Clothing",
+  tagline: "Elegance in Every Thread",
+  contactEmail: "support@twelveclothing.com",
+  contactPhone: "+880 1700-112233",
+  address: "House 45, Road 11, Banani, Dhaka",
+  facebookUrl: "https://facebook.com/twelveclothingbd",
+  instagramUrl: "https://instagram.com/twelveclothingbd",
+  tiktokUrl: "https://tiktok.com/@twelveclothingbd",
+  youtubeUrl: "https://youtube.com/@twelveclothingbd",
+  whatsappNumber: "+8801700112233",
+});
 
   const [seoInfo, setSeoInfo] = useState({
     metaTitle: "Twelve Clothing | Premium Panjabi & Ethnic Wear",
     metaDescription: "Exclusive Panjabi, Shirts & Women's Wear at Twelve Clothing.",
     metaKeywords: "Twelve Clothing, Panjabi, Mens Fashion",
+    ogImage: "https://images.unsplash.com/photo-1621452773781-0f992fd1f5cb?auto=format&fit=crop&q=80&w=1200",
   });
 
   const [logoPreview, setLogoPreview] = useState<string>("");
@@ -155,7 +161,7 @@ export const Settings: React.FC = () => {
         </div>
       )}
 
-      {/* নেভিগেশন ট্যাব লিস্ট (ডাইনামিক্যালি পারমিশন অনুযায়ী ফিল্টারড) */}
+      {/* নেভিগেশন ট্যাব লিস্ট (ডাইনামিক্যালি পারমিশন অনুযায়ী ফিল্টারড) */}
       <div className="flex flex-wrap items-center gap-2 border-b border-borderLight pb-3">
         {visibleTabs.map((tab) => {
           const Icon = tab.icon;

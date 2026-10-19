@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -10,8 +9,10 @@ import {
   LogOut,
   X,
   SlidersHorizontal,
-  ShieldCheck, // টিম ও রোল ম্যানেজমেন্টের জন্য
-  Activity     // এক্টিভিটি লোগ / অডিট ট্রেইল দেখার জন্য
+  ShieldCheck,
+  Activity,
+  MapPin,
+  Info // About সেকশনের জন্য আইকন
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -27,11 +28,12 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { name: 'Products', href: '/seller/products', icon: Package },
     { name: 'Categories', href: '/seller/categories', icon: FolderTree },
     { name: 'Sliders', href: '/seller/sliders', icon: SlidersHorizontal },
+    { name: 'Store Locations', href: '/seller/locations', icon: MapPin },
+    { name: 'About Section', href: '/seller/about-settings', icon: Info }, // নতুন রাউট
     { name: 'Orders', href: '/seller/orders', icon: ShoppingCart },
     { name: 'Customers', href: '/seller/customers', icon: Users },
-    // মাল্টি-ইউজার বা টিম ম্যানেজমেন্টের নতুন রাউটসমূহ:
-    { name: 'Team & Staff', href: '/seller/team', icon: ShieldCheck }, // অ্যাডমিন ও মডারেটর ম্যানেজ করতে
-    { name: 'Activity Logs', href: '/seller/activity-logs', icon: Activity }, // কে কী কাজ করলো তা ট্র্যাক করতে
+    { name: 'Team & Staff', href: '/seller/team', icon: ShieldCheck },
+    { name: 'Activity Logs', href: '/seller/activity-logs', icon: Activity },
     { name: 'Settings', href: '/seller/settings', icon: Settings },
   ];
 
