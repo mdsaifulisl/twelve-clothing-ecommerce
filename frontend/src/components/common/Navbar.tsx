@@ -126,8 +126,8 @@ export const Navbar: React.FC = () => {
         hasDropdown: false,
       },
       {
-        name: '20% OFF',
-        path: '/items?discount=20',
+        name: 'Seller',
+        path: '/seller',
         hasDropdown: false,
       },
     ];
