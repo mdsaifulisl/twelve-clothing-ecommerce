@@ -68,7 +68,7 @@ export const cartSlice = createSlice({
           quantity: qtyToAdd,
         });
       }
-      state.isOpen = true;
+      // state.isOpen = true;
       saveCartToStorage(state.items);
     },
     removeFromCart: (state, action: PayloadAction<{ id: string; size: string }>) => {

@@ -1,24 +1,19 @@
-import React, { useState, useMemo } from 'react';
-import storesData from '../../../data/stores.json';
-
-interface Store {
-  id: string;
-  division: string;
-  name: string;
-  address: string;
-  phone: string;
-  offDay: string;
-  openingTime: string;
-  closingTime: string;
-  mapLink: string;
-}
+import React, { useEffect, useState, useMemo } from 'react';
+import { useStoreLocations } from '../../../features/storeLocation/useStoreLocations';
+import type { StoreLocation } from '../../../features/storeLocation/storeLocationType';
 
 export const StoreLocatorPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { locations: stores, isLoading, error, loadLocations } = useStoreLocations();
+
+  useEffect(() => {
+    const request = loadLocations();
+    return () => request.abort();
+  }, [loadLocations]);
 
   // সার্চ কুয়েরি অনুযায়ী স্টোর ফিল্টার করা
   const filteredStores = useMemo(() => {
-    return (storesData as Store[]).filter((store) => {
+    return stores.filter((store) => {
       const query = searchTerm.toLowerCase();
       return (
         store.name.toLowerCase().includes(query) ||
@@ -26,7 +21,7 @@ export const StoreLocatorPage: React.FC = () => {
         store.division.toLowerCase().includes(query)
       );
     });
-  }, [searchTerm]);
+  }, [searchTerm, stores]);
 
   // ডিভিশন অনুযায়ী স্টোরগুলো গ্রুপিং করা
   const groupedStores = useMemo(() => {
@@ -36,7 +31,7 @@ export const StoreLocatorPage: React.FC = () => {
       }
       acc[store.division].push(store);
       return acc;
-    }, {} as Record<string, Store[]>);
+    }, {} as Record<string, StoreLocation[]>);
   }, [filteredStores]);
 
   return (
@@ -64,9 +59,17 @@ export const StoreLocatorPage: React.FC = () => {
 
       {/* Stores List grouped by Division */}
       <div className="space-y-10 max-w-3xl mx-auto">
-        {Object.keys(groupedStores).length === 0 ? (
+        {isLoading ? (
           <div className="text-center py-12 bg-gray-50 rounded">
-            <p className="text-sm text-gray-500">কোনো আউটলেট পাওয়া যায়নি!</p>
+            <p className="text-sm text-gray-500">লোড হচ্ছে…</p>
+          </div>
+        ) : error ? (
+          <div role="alert" className="text-center py-12 bg-gray-50 rounded">
+            <p className="text-sm text-red-600">স্টোরের তথ্য লোড করা যায়নি। পরে আবার চেষ্টা করুন।</p>
+          </div>
+        ) : Object.keys(groupedStores).length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded">
+            <p className="text-sm text-gray-500">No outlets found.</p>
           </div>
         ) : (
           Object.entries(groupedStores).map(([division, stores]) => (

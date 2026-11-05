@@ -14,19 +14,19 @@ const categories: CategoryItem[] = [
     id: 'women',
     title: 'Women',
     image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&q=80&w=600',
-    link: '/women',
+    link: '/items?gender=women',
   },
   {
     id: 'men',
     title: 'Men',
     image: 'https://images.unsplash.com/photo-1621452773781-0f992fd1f5cb?auto=format&fit=crop&q=80&w=600',
-    link: '/men',
+    link: '/items?gender=men',
   },
   {
     id: 'kids',
     title: 'Kids',
     image: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?auto=format&fit=crop&q=80&w=600',
-    link: '/kids',
+    link: '/items?gender=kids',
   },
 ];
 

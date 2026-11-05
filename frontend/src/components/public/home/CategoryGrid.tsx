@@ -1,122 +1,132 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
-
-interface CategoryGridItem {
-  id: string;
-  title: string;
-  image: string;
-  link: string;
-}
-
-// ২টা বড় কার্ড (Featured Grid)
-const topCategories: CategoryGridItem[] = [
-  {
-    id: 'men-polos',
-    title: 'Men Polos',
-    image: 'https://images.unsplash.com/photo-1625910513413-5acc23e4210e?auto=format&fit=crop&q=80&w=800',
-    link: '/category/polo',
-  },
-  {
-    id: 'men-denim-pants',
-    title: 'Men Denim Pants',
-    image: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&q=80&w=800',
-    link: '/category/denim-pant',
-  },
-];
-
-// ৬টি ছোট কার্ড (Bottom Grid - 3 Column Layout)
-const subCategories: CategoryGridItem[] = [
-  {
-    id: 'men-casual-shirts',
-    title: 'Men Casual Shirts',
-    image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=600',
-    link: '/category/casual-shirt',
-  },
-  {
-    id: 'women-kurti',
-    title: 'Women Kurti',
-    image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&q=80&w=600',
-    link: '/category/kurti',
-  },
-  {
-    id: 'all-boys-collection',
-    title: 'All Boys Collection',
-    image: 'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&q=80&w=600',
-    link: '/category/boys-panjabi',
-  },
-  {
-    id: 'women-tops',
-    title: 'Women Tops',
-    image: 'https://images.unsplash.com/photo-1564257631407-4deb1f99d992?auto=format&fit=crop&q=80&w=600',
-    link: '/category/tops',
-  },
-  {
-    id: 'men-tshirts',
-    title: 'Men T-Shirts',
-    image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=600',
-    link: '/category/t-shirt',
-  },
-  {
-    id: 'all-girls-collection',
-    title: 'All Girls Collection',
-    image: 'https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&q=80&w=600',
-    link: '/category/girls-frock',
-  },
-];
+import { ChevronRight, Loader2 } from 'lucide-react';
+import { useProduct } from '../../../features/product/useProduct';
+import type { IProduct } from '../../../features/product/ProductType';
 
 export const CategoryGrid: React.FC = () => {
-  return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 space-y-8">
-      
-      {/* Top 2 Large Grid Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {topCategories.map((item) => (
-          <div key={item.id} className="group relative overflow-hidden bg-gray-100 rounded-lg">
-            <div className="aspect-[4/3] w-full overflow-hidden">
-              <img
-                src={item.image}
-                alt={item.title}
-                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
-              />
-            </div>
-            <div className="py-3 flex items-center justify-start bg-white">
-              <Link
-                to={item.link}
-                className="inline-flex items-center gap-1 font-heading font-bold text-base md:text-lg text-primary hover:text-cardHeader transition-colors"
-              >
-                <span>{item.title}</span>
-                <ChevronRight size={18} className="text-gray-500 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-          </div>
-        ))}
-      </div>
+  const { products, fetchAllProducts, isLoading } = useProduct();
 
-      {/* Bottom 6 Sub-Categories (3 Column Grid) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {subCategories.map((item) => (
-          <div key={item.id} className="group relative overflow-hidden bg-gray-100 rounded-lg">
-            <div className="aspect-[4/5] w-full overflow-hidden">
-              <img
-                src={item.image}
-                alt={item.title}
-                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
-              />
-            </div>
-            <div className="py-3 flex items-center justify-start bg-white">
-              <Link
-                to={item.link}
-                className="inline-flex items-center gap-1 font-heading font-semibold text-sm md:text-base text-primary hover:text-cardHeader transition-colors"
-              >
-                <span>{item.title}</span>
-                <ChevronRight size={16} className="text-gray-500 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-          </div>
-        ))}
+  // পেজ লোড হওয়ার সাথে সাথে প্রোডাক্ট ফেচ করা
+  useEffect(() => {
+    fetchAllProducts();
+  }, []);
+
+  // 🚀 ক্যাটাগরি এবং সাব-ক্যাটাগরি ভিত্তিক ডাইনামিক গ্রিড আইটেম তৈরি করা (সর্বোচ্চ ১০টি)
+  const dynamicCategoryCards = useMemo(() => {
+    if (!products || products.length === 0) return [];
+
+    const productList = products as IProduct[];
+    const cardMap = new Map<string, { id: string; title: string; image: string; link: string }>();
+
+    productList.forEach((product) => {
+      const category = product.category;
+      const subCategory = product.subCategory || product.productType;
+
+      if (!category) return;
+
+      const key = subCategory ? `${category}-${subCategory}` : category;
+
+      if (!cardMap.has(key)) {
+        const imageUrl = Array.isArray(product.image) && product.image.length > 0 
+          ? product.image[0] 
+          : 'https://images.unsplash.com/photo-1621452773781-0f992fd1f5cb?auto=format&fit=crop&q=80&w=800';
+
+        const title = subCategory ? `${category} ${subCategory}` : category;
+        const link = subCategory 
+          ? `/items?category=${encodeURIComponent(category)}&subCategory=${encodeURIComponent(subCategory)}`
+          : `/items?category=${encodeURIComponent(category)}`;
+
+        cardMap.set(key, {
+          id: key.toLowerCase().replace(/\s+/g, '-'),
+          title: title,
+          image: imageUrl,
+          link: link,
+        });
+      }
+    });
+
+    // সর্বোচ্চ ১০টি কার্ড রিটার্ন করা
+    return Array.from(cardMap.values()).slice(0, 10);
+  }, [products]);
+
+  // টপ ২টি বড় কার্ড এবং বাকিগুলোকে সাব-ক্যাটাগরি কার্ড হিসেবে ভাগ করা
+  const topCategories = dynamicCategoryCards.slice(0, 2);
+  const subCategories = dynamicCategoryCards.slice(2, 10); // বাকিগুলো (সর্বোচ্চ ৮টি)
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <Loader2 className="w-8 h-8 animate-spin text-black mb-2" />
+        <p className="text-xs text-gray-500">Loading categories...</p>
       </div>
+    );
+  }
+
+  if (dynamicCategoryCards.length === 0) {
+    return null; 
+  }
+
+  return (
+    <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-8 md:py-12 space-y-6 sm:space-y-8">
+      
+      {/* Top 2 Large Grid Cards (Featured Cards) */}
+      {topCategories.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-4 sm:gap-6">
+          {topCategories.map((item) => (
+            <Link 
+              key={item.id} 
+              to={item.link}
+              className="group relative overflow-hidden bg-gray-100 rounded-lg border border-borderLight shadow-sm block hover:shadow-md transition-all"
+            >
+              <div className="aspect-[4/3] w-full overflow-hidden">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
+                />
+              </div>
+              <div className="p-3 sm:p-4 flex items-center justify-between bg-white">
+                <span className="inline-flex items-center gap-1 font-heading font-bold text-sm sm:text-base md:text-lg text-primary group-hover:text-cardHeader transition-colors">
+                  <span>{item.title}</span>
+                  <ChevronRight size={18} className="text-gray-500 group-hover:translate-x-1 transition-transform" />
+                </span>
+                <span className="text-[10px] sm:text-xs text-gray-400 font-medium">Featured</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Bottom Sub-Categories (Mobile-এ ২ কলাম এবং Desktop-এ ৩ কলাম) */}
+      {subCategories.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+          {subCategories.map((item) => (
+            <Link 
+              key={item.id} 
+              to={item.link}
+              className="group relative overflow-hidden bg-gray-100 rounded-lg border border-borderLight shadow-sm block hover:shadow-md transition-all"
+            >
+              <div className="aspect-[4/5] w-full overflow-hidden">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
+                />
+              </div>
+              <div className="p-2.5 sm:p-4 flex items-center justify-between bg-white">
+                <span className="inline-flex items-center gap-1 font-heading font-semibold text-xs sm:text-sm md:text-base text-primary group-hover:text-cardHeader transition-colors truncate">
+                  <span className="truncate">{item.title}</span>
+                  <ChevronRight size={16} className="text-gray-500 group-hover:translate-x-1 transition-transform shrink-0" />
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
 
     </section>
   );
 };
+
+export default CategoryGrid;

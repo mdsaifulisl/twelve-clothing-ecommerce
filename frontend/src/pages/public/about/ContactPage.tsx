@@ -1,8 +1,18 @@
 import React from 'react';
 import { Phone, Mail, MapPin, Clock, MessageSquare, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { usePublicSettings } from '../../../features/settings/usePublicSettings';
 
 export const ContactPage: React.FC = () => {
+  const { settings } = usePublicSettings();
+  const general = settings?.general;
+  const phoneHref = general?.contactPhone ? `tel:${general.contactPhone.replace(/[^\d+]/g, '')}` : undefined;
+  const whatsappHref = general?.whatsappNumber
+    ? general.whatsappNumber.startsWith('http')
+      ? general.whatsappNumber
+      : `https://wa.me/${general.whatsappNumber.replace(/\D/g, '')}`
+    : undefined;
+
   return (
     <div className="bg-white text-primary">
       {/* Header Banner */}
@@ -15,7 +25,7 @@ export const ContactPage: React.FC = () => {
             Contact Us
           </h1>
           <p className="mt-3 text-xs sm:text-sm text-gray-500 max-w-xl mx-auto font-light">
-            Have questions about your order or our collections? We are here to help you via phone, email, or WhatsApp.
+            Have questions about your order or {general?.storeName || 'our store'}? Contact our support team by phone, email, or WhatsApp.
           </p>
         </div>
       </div>
@@ -36,23 +46,20 @@ export const ContactPage: React.FC = () => {
               Talk directly with our support team for order inquiries and sizing guidance.
             </p>
             <div className="pt-2 space-y-2">
-              <p className="text-sm font-semibold text-primary">
-                Hotline:{' '}
-                <a href="tel:01847425569" className="text-cardHeader hover:underline">
-                  +880 1847-425569
-                </a>
-              </p>
-              <p className="text-sm font-semibold text-primary">
+              {general?.contactPhone && <p className="text-sm font-semibold text-primary">
+                Hotline: <a href={phoneHref} className="text-cardHeader hover:underline">{general.contactPhone}</a>
+              </p>}
+              {whatsappHref && <p className="text-sm font-semibold text-primary">
                 WhatsApp:{' '}
                 <a 
-                  href="https://wa.me/8801847425569" 
+                  href={whatsappHref}
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="text-green-600 hover:underline inline-flex items-center gap-1"
                 >
                   Message Us <MessageSquare size={14} />
                 </a>
-              </p>
+              </p>}
             </div>
           </div>
 
@@ -68,18 +75,12 @@ export const ContactPage: React.FC = () => {
               Send us an email for general questions, corporate orders, or feedback.
             </p>
             <div className="pt-2 space-y-2">
-              <p className="text-sm font-semibold text-primary">
+              {general?.contactEmail && <p className="text-sm font-semibold text-primary">
                 Support:{' '}
-                <a href="mailto:support@panjabiordersys.com" className="text-cardHeader hover:underline">
-                  support@panjabiordersys.com
+                <a href={`mailto:${general.contactEmail}`} className="text-cardHeader hover:underline">
+                  {general.contactEmail}
                 </a>
-              </p>
-              <p className="text-sm font-semibold text-primary">
-                Inquiries:{' '}
-                <a href="mailto:info@panjabiordersys.com" className="text-cardHeader hover:underline">
-                  info@panjabiordersys.com
-                </a>
-              </p>
+              </p>}
             </div>
           </div>
 
@@ -95,9 +96,7 @@ export const ContactPage: React.FC = () => {
               Visit our main outlet to experience our exclusive collections firsthand.
             </p>
             <div className="pt-2 space-y-2 text-xs sm:text-sm text-primary leading-relaxed">
-              <p className="font-semibold">
-                House #12, Road #11, Sector #1, Uttara, Dhaka-1230, Bangladesh
-              </p>
+              {general?.address && <p className="font-semibold">{general.address}</p>}
               <div className="pt-2">
                 <Link
                   to="/stores"
@@ -144,17 +143,17 @@ export const ContactPage: React.FC = () => {
                 Follow our official social pages for new arrival updates and promotions.
               </p>
               <div className="flex md:justify-end gap-4 text-xs font-bold uppercase tracking-widest text-primary pt-1">
-                <a href="https://facebook.com" target="_blank" rel="noreferrer" className="hover:text-cardHeader">
+                {general?.facebookUrl && <a href={general.facebookUrl} target="_blank" rel="noreferrer" className="hover:text-cardHeader">
                   Facebook
-                </a>
-                <span>•</span>
-                <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-cardHeader">
+                </a>}
+                {general?.facebookUrl && general?.instagramUrl && <span>•</span>}
+                {general?.instagramUrl && <a href={general.instagramUrl} target="_blank" rel="noreferrer" className="hover:text-cardHeader">
                   Instagram
-                </a>
-                <span>•</span>
-                <a href="https://youtube.com" target="_blank" rel="noreferrer" className="hover:text-cardHeader">
+                </a>}
+                {general?.youtubeUrl && (general?.facebookUrl || general?.instagramUrl) && <span>•</span>}
+                {general?.youtubeUrl && <a href={general.youtubeUrl} target="_blank" rel="noreferrer" className="hover:text-cardHeader">
                   YouTube
-                </a>
+                </a>}
               </div>
             </div>
 

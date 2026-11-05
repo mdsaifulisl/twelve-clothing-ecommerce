@@ -1,41 +1,60 @@
 import React, { useState } from 'react';
 import { Save, UploadCloud, Link as LinkIcon, CheckCircle2, Eye, Trash2 } from 'lucide-react';
-
-export interface AboutSectionData {
-  title: string;
-  paragraph1: string;
-  paragraph2: string;
-  buttonText: string;
-  buttonLink: string;
-  imageUrl: string;
-}
+import { useAppDispatch } from '../../../app/hooks';
+import { showAlertModal } from '../../../features/alert/alertSlice';
+import { useAboutSection } from '../../../features/aboutSection/useAboutSection';
+import type { AboutSection } from '../../../features/aboutSection/aboutSectionType';
 
 export const AboutSettings: React.FC = () => {
-  const [formData, setFormData] = useState<AboutSectionData>({
-    title: "Crafting Elegance For Every Celebration",
-    paragraph1: "Founded with a passion for traditional attire, our platform has grown into a trusted destination for premium Panjabis, festive wear, and exclusive ethnic collections. We take pride in sourcing the finest fabrics—from rich silk blends to breathable pure cottons—ensuring absolute comfort without compromising on style.",
-    paragraph2: "Whether it's Eid, weddings, or casual festive gatherings, our designs focus on intricate embroidery, refined cuts, and meticulous attention to detail.",
-    buttonText: "Explore Collection",
-    buttonLink: "/items?category=Men",
-    imageUrl: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=800",
-  });
+  const dispatch = useAppDispatch();
+  const { content, isLoading, isSaving, error, fetchContent, saveContent } = useAboutSection();
+  const [draft, setDraft] = useState<AboutSection | null>(null);
+  const formData = draft ?? content;
 
   const [isSaved, setIsSaved] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const handleSave = (e: React.FormEvent) => {
+  React.useEffect(() => {
+    const request = fetchContent();
+    return () => request.abort();
+  }, [fetchContent]);
+
+  const changeField = (field: keyof AboutSection, value: string) => {
+    setDraft((previous) => ({ ...(previous ?? content), [field]: value }));
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    try {
+      await saveContent({
+        title: formData.title,
+        paragraph1: formData.paragraph1,
+        paragraph2: formData.paragraph2,
+        buttonText: formData.buttonText,
+        buttonLink: formData.buttonLink,
+        ...(selectedFile ? { image: selectedFile } : {}),
+      });
+      if (previewUrl?.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
+      setDraft(null);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setIsSaved(true);
+      window.setTimeout(() => setIsSaved(false), 3000);
+      dispatch(showAlertModal({ message: 'About section saved successfully.', type: 'success', isToast: true }));
+    } catch (cause) {
+      dispatch(showAlertModal({ message: String(cause), type: 'error', isToast: true }));
+    }
   };
 
   // ইমেজ ফাইল সিলেক্ট ও প্রিভিউ অপশন
   const handleFileChange = (file: File) => {
     if (file && file.type.startsWith('image/')) {
+      if (previewUrl?.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
       setSelectedFile(file);
-      setFormData({ ...formData, imageUrl: URL.createObjectURL(file) });
+      setPreviewUrl(URL.createObjectURL(file));
     } else {
-      alert("Please upload a valid image file (JPG, PNG, WEBP).");
+      dispatch(showAlertModal({ message: 'Please upload a valid image file (JPG, PNG, WEBP).', type: 'error', isToast: true }));
     }
   };
 
@@ -63,6 +82,9 @@ export const AboutSettings: React.FC = () => {
         )}
       </div>
 
+      {isLoading && <p className="text-xs text-gray-500">Loading saved About content…</p>}
+      {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Editor Form */}
         <form onSubmit={handleSave} className="lg:col-span-6 bg-white rounded-2xl border border-borderLight p-6 shadow-xs space-y-5">
@@ -74,7 +96,7 @@ export const AboutSettings: React.FC = () => {
               type="text"
               required
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) => changeField('title', e.target.value)}
               className="w-full px-3.5 py-2 bg-surface border border-borderLight rounded-xl text-sm outline-none focus:border-cardHeader"
             />
           </div>
@@ -85,7 +107,7 @@ export const AboutSettings: React.FC = () => {
               required
               rows={4}
               value={formData.paragraph1}
-              onChange={(e) => setFormData({ ...formData, paragraph1: e.target.value })}
+              onChange={(e) => changeField('paragraph1', e.target.value)}
               className="w-full px-3.5 py-2 bg-surface border border-borderLight rounded-xl text-sm outline-none focus:border-cardHeader"
             />
           </div>
@@ -95,7 +117,7 @@ export const AboutSettings: React.FC = () => {
             <textarea
               rows={3}
               value={formData.paragraph2}
-              onChange={(e) => setFormData({ ...formData, paragraph2: e.target.value })}
+              onChange={(e) => changeField('paragraph2', e.target.value)}
               className="w-full px-3.5 py-2 bg-surface border border-borderLight rounded-xl text-sm outline-none focus:border-cardHeader"
             />
           </div>
@@ -106,7 +128,7 @@ export const AboutSettings: React.FC = () => {
               <input
                 type="text"
                 value={formData.buttonText}
-                onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })}
+                onChange={(e) => changeField('buttonText', e.target.value)}
                 className="w-full px-3.5 py-2 bg-surface border border-borderLight rounded-xl text-sm outline-none focus:border-cardHeader"
               />
             </div>
@@ -119,7 +141,7 @@ export const AboutSettings: React.FC = () => {
               <input
                 type="text"
                 value={formData.buttonLink}
-                onChange={(e) => setFormData({ ...formData, buttonLink: e.target.value })}
+                onChange={(e) => changeField('buttonLink', e.target.value)}
                 className="w-full px-3.5 py-2 bg-surface border border-borderLight rounded-xl text-sm outline-none focus:border-cardHeader"
               />
             </div>
@@ -152,7 +174,11 @@ export const AboutSettings: React.FC = () => {
                 <span className="truncate max-w-[200px]">📁 {selectedFile.name}</span>
                 <button
                   type="button"
-                  onClick={() => setSelectedFile(null)}
+                  onClick={() => {
+                    if (previewUrl?.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
+                    setSelectedFile(null);
+                    setPreviewUrl(null);
+                  }}
                   className="text-red-500 hover:text-red-700 p-1"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -164,10 +190,11 @@ export const AboutSettings: React.FC = () => {
           <div className="pt-4 border-t border-borderLight flex justify-end">
             <button
               type="submit"
-              className="flex items-center gap-2 px-6 py-2.5 bg-cardHeader text-white font-semibold text-sm rounded-xl hover:bg-cardAccent transition-colors shadow-xs cursor-pointer"
+              disabled={isSaving}
+              className="flex items-center gap-2 px-6 py-2.5 bg-cardHeader text-white font-semibold text-sm rounded-xl hover:bg-cardAccent transition-colors shadow-xs cursor-pointer disabled:opacity-60"
             >
               <Save className="w-4 h-4" />
-              <span>Save Changes</span>
+              <span>{isSaving ? 'Saving…' : 'Save Changes'}</span>
             </button>
           </div>
         </form>
@@ -204,7 +231,7 @@ export const AboutSettings: React.FC = () => {
 
               <div className="relative aspect-[4/3] overflow-hidden rounded-lg shadow-md bg-gray-100">
                 <img
-                  src={formData.imageUrl}
+                  src={previewUrl ?? formData.imageUrl}
                   alt="About Section Banner"
                   className="w-full h-full object-cover"
                 />

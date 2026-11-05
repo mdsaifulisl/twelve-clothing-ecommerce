@@ -1,8 +1,16 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { usePublicSettings } from '../../features/settings/usePublicSettings';
 
 export const Footer: React.FC = () => {
+    const { settings } = usePublicSettings();
+    const general = settings?.general;
+    const whatsappHref = general?.whatsappNumber
+      ? general.whatsappNumber.startsWith('http')
+        ? general.whatsappNumber
+        : `https://wa.me/${general.whatsappNumber.replace(/\D/g, '')}`
+      : undefined;
     return (
         <footer className="w-full mt-12 bg-white border-t border-borderLight">
       {/* Store Location Banner */}
@@ -41,6 +49,8 @@ export const Footer: React.FC = () => {
           <span>•</span>
           <Link to="/contact" className="hover:text-[#F26522] transition-colors">Contact Us</Link>
           <span>•</span>
+          <Link to="/order-tracking" className="hover:text-[#F26522] transition-colors">Track Order</Link>
+          <span>•</span>
           <Link to="/privacy-policy" className="hover:text-[#F26522] transition-colors">Privacy Policy</Link>
           <span>•</span>
           <Link to="/terms" className="hover:text-[#F26522] transition-colors">Terms & Conditions</Link>
@@ -48,12 +58,20 @@ export const Footer: React.FC = () => {
           <Link to="/faq" className="hover:text-[#F26522] transition-colors">FAQ</Link>
         </div>
 
+        <div className="mb-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-gray-600">
+          {general?.storeName && <span className="font-semibold text-primary">{general.storeName}</span>}
+          {general?.address && <span>{general.address}</span>}
+          {general?.contactPhone && <a href={`tel:${general.contactPhone}`} className="hover:text-[#F26522]">{general.contactPhone}</a>}
+          {general?.contactEmail && <a href={`mailto:${general.contactEmail}`} className="hover:text-[#F26522]">{general.contactEmail}</a>}
+          {whatsappHref && <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="hover:text-[#F26522]">WhatsApp</a>}
+        </div>
+
         {/* Social Icons with SVG */}
         <div className="flex items-center justify-center space-x-6 text-primary mb-6">
           
           {/* Facebook SVG Icon */}
           <a
-            href="https://facebook.com"
+            href={general?.facebookUrl || "https://facebook.com"}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-[#F26522] transition-colors p-1"
@@ -70,7 +88,7 @@ export const Footer: React.FC = () => {
 
           {/* Instagram SVG Icon */}
           <a
-            href="https://instagram.com"
+            href={general?.instagramUrl || "https://instagram.com"}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-[#F26522] transition-colors p-1"
@@ -87,7 +105,7 @@ export const Footer: React.FC = () => {
 
           {/* YouTube SVG Icon */}
           <a
-            href="https://youtube.com"
+            href={general?.youtubeUrl || "https://youtube.com"}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-[#F26522] transition-colors p-1"
@@ -104,7 +122,7 @@ export const Footer: React.FC = () => {
 
           {/* TikTok Text / SVG */}
           <a
-            href="https://tiktok.com"
+            href={general?.tiktokUrl || "https://tiktok.com"}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-[#F26522] transition-colors p-1 text-xs font-bold"
@@ -117,7 +135,7 @@ export const Footer: React.FC = () => {
         {/* Copyright */}
         <div className="text-center border-t border-gray-100 pt-6">
           <p className="text-[11px] text-gray-400 font-light">
-            © {new Date().getFullYear()} Panjabi Order Management System. All Rights Reserved.
+              © {new Date().getFullYear()} {general?.storeName || "Panjabi Order Management System"}. All Rights Reserved.
           </p>
         </div>
       </div>

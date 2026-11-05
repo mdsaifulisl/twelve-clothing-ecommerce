@@ -8,16 +8,291 @@ generator client {
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?  @db.Text
-  price       Float
-  category    String
-  subCategory String?
-  stock       Int      @default(0)
-  images      String?  @db.Text
+  id               String   @id @default(uuid())
+  title            String
+  price            Float
+  discount         Float    @default(0)
+  category         String
+  subCategory      String
+  productType      String
+  image            Json     // ছবির ইউআরএল অ্যারে রাখার জন্য
+  color            String?
+  availableSizes   Json     // সাইজ অ্যারে রাখার জন্য (যেমন: ["S", "M", "L"])
+  description      String?  @db.Text
+  material         String?
+  fit              String?
+  careInstructions Json     // কেয়ার ইন্সট্রাকশন অ্যারে
+  sku              String   @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  orderItems       OrderItem[]
+
+  @@map("products")
+}
+
+model BannerSlider {
+  id         String   @id @default(uuid())
+  title      String   @db.VarChar(191)
+  subtitle   String   @default("") @db.VarChar(1000)
+  buttonText String   @default("SHOP NOW") @db.VarChar(100)
+  link       String   @default("/shop") @db.VarChar(2048)
+  image      String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([createdAt])
+  @@map("banner_sliders")
+}
+
+model StoreLocation {
+  id          String   @id @default(uuid())
+  division    String   @default("Dhaka Division") @db.VarChar(100)
+  name        String   @db.VarChar(191)
+  address     String   @db.Text
+  phone       String   @db.VarChar(32)
+  offDay      String   @default("Sunday") @db.VarChar(50)
+  openingTime String   @default("10:00 AM") @db.VarChar(50)
+  closingTime String   @default("10:00 PM") @db.VarChar(50)
+  mapLink     String   @default("#") @db.VarChar(2048)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("products")
+  @@index([division, name])
+  @@map("store_locations")
+}
+
+model AboutSection {
+  id         String   @id @default("singleton") @db.VarChar(32)
+  title      String   @db.VarChar(191)
+  paragraph1 String   @db.Text
+  paragraph2 String   @db.Text
+  buttonText String   @db.VarChar(100)
+  buttonLink String   @db.VarChar(2048)
+  imageUrl   String   @db.VarChar(2048)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("about_sections")
+}
+
+model TermsPage {
+  id            String   @id @default("singleton") @db.VarChar(32)
+  title         String   @db.VarChar(191)
+  introduction  String   @db.Text
+  effectiveDate String   @db.VarChar(10)
+  sections      Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("terms_pages")
+}
+
+model FaqPage {
+  id        String   @id @default("singleton") @db.VarChar(32)
+  items     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("faq_pages")
+}
+
+model StoreSettings {
+  id                      String   @id @default("singleton") @db.VarChar(32)
+  general                 Json
+  seo                     Json
+  branding                Json
+  telegramChatId          String?  @db.VarChar(191)
+  telegramBotTokenEncrypted String? @db.Text
+  notifyOnNewOrder        Boolean  @default(true)
+  delivery                Json
+  payment                 Json
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("store_settings")
+}
+
+enum IpAddressFamily {
+  IPV4
+  IPV6
+}
+
+enum SecurityAuditTargetType {
+  CUSTOMER
+  IP
+  DEVICE
+}
+
+enum SecurityAuditAction {
+  CUSTOMER_CREATED
+  CUSTOMER_BLOCKED
+  CUSTOMER_UNBLOCKED
+  IP_BLOCKED
+  IP_UNBLOCKED
+  DEVICE_BLOCKED
+  DEVICE_UNBLOCKED
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  DELIVERED
+  CANCELLED
+}
+
+enum OrderPaymentMethod {
+  cod
+  online
+}
+
+enum OrderCity {
+  dhaka
+  outside
+}
+
+enum OrderAuditAction {
+  ORDER_CREATED
+  STATUS_CHANGED
+  ARCHIVED
+  UNARCHIVED
+  SEEN
+}
+
+model Order {
+  id                String             @id @default(uuid())
+  orderCode         String             @unique @db.VarChar(32)
+  customerName      String             @db.VarChar(191)
+  phone             String             @db.VarChar(32)
+  normalizedPhone   String             @db.VarChar(20)
+  customerId        String?
+  address           String             @db.Text
+  city              OrderCity
+  paymentMethod     OrderPaymentMethod
+  status            OrderStatus        @default(PENDING)
+  subtotal          Decimal            @db.Decimal(12, 2)
+  deliveryCharge    Decimal            @db.Decimal(12, 2)
+  totalAmount       Decimal            @db.Decimal(12, 2)
+  clientIp          String?            @db.VarChar(45)
+  deviceFingerprint String?            @db.Char(64)
+  seenAt            DateTime?
+  seenBy            String?            @db.VarChar(191)
+  archivedAt        DateTime?
+  archivedBy        String?            @db.VarChar(191)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  items             OrderItem[]
+  auditLogs         OrderAuditLog[]
+  customer          Customer?          @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  @@index([status, createdAt])
+  @@index([archivedAt, createdAt])
+  @@index([normalizedPhone])
+  @@index([customerId, createdAt])
+  @@index([deviceFingerprint, createdAt])
+  @@map("orders")
+}
+
+model CustomerDevice {
+  id              String    @id @default(uuid())
+  fingerprintHash String    @unique @db.Char(64)
+  isBlocked       Boolean   @default(false)
+  blockReason     String?   @db.Text
+  blockedAt       DateTime?
+  blockedBy       String?   @db.VarChar(191)
+  unblockedAt     DateTime?
+  unblockedBy     String?   @db.VarChar(191)
+  firstSeenAt     DateTime  @default(now())
+  lastSeenAt      DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([isBlocked, lastSeenAt])
+  @@map("customer_devices")
+}
+
+model Customer {
+  id              String    @id @default(uuid())
+  name            String    @db.VarChar(191)
+  phone           String    @db.VarChar(32)
+  normalizedPhone String    @unique @db.VarChar(20)
+  isBlocked       Boolean   @default(false)
+  blockReason     String?   @db.Text
+  blockedAt       DateTime?
+  blockedBy       String?   @db.VarChar(191)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  orders          Order[]
+
+  @@index([isBlocked, createdAt])
+  @@map("customers")
+}
+
+model BlockedIp {
+  id          String           @id @default(uuid())
+  address     String           @unique @db.VarChar(45)
+  family      IpAddressFamily
+  isBlocked   Boolean          @default(true)
+  reason      String?          @db.Text
+  blockedAt   DateTime         @default(now())
+  blockedBy   String?          @db.VarChar(191)
+  unblockedAt DateTime?
+  unblockedBy String?          @db.VarChar(191)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([isBlocked, blockedAt])
+  @@map("blocked_ips")
+}
+
+model SecurityAuditLog {
+  id         String                 @id @default(uuid())
+  targetType SecurityAuditTargetType
+  targetId   String                 @db.VarChar(191)
+  action     SecurityAuditAction
+  actorId    String?                @db.VarChar(191)
+  actorLabel String?                @db.VarChar(191)
+  oldValue   Json?
+  newValue   Json?
+  requestIp  String?                @db.VarChar(45)
+  createdAt  DateTime               @default(now())
+
+  @@index([targetType, targetId, createdAt])
+  @@index([action, createdAt])
+  @@map("security_audit_logs")
+}
+
+model OrderItem {
+  id           String   @id @default(uuid())
+  orderId      String
+  productId    String?
+  productTitle String   @db.VarChar(191)
+  sku          String   @db.VarChar(191)
+  size         String   @db.VarChar(32)
+  color        String?  @db.VarChar(191)
+  unitPrice    Decimal  @db.Decimal(12, 2)
+  quantity     Int
+  lineTotal    Decimal  @db.Decimal(12, 2)
+  createdAt    DateTime @default(now())
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  product      Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model OrderAuditLog {
+  id         String          @id @default(uuid())
+  orderId    String
+  action     OrderAuditAction
+  actorId    String?         @db.VarChar(191)
+  actorLabel String?         @db.VarChar(191)
+  oldValue   Json?
+  newValue   Json?
+  requestIp  String?         @db.VarChar(45)
+  createdAt  DateTime        @default(now())
+  order      Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
+  @@map("order_audit_logs")
 }

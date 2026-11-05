@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Award, HeartHandshake, Sparkles } from 'lucide-react';
+import { useAboutSection } from '../../../features/aboutSection/useAboutSection';
 
 export const AboutPage: React.FC = () => {
+  const { content, fetchContent } = useAboutSection();
+
+  useEffect(() => {
+    const request = fetchContent();
+    return () => request.abort();
+  }, [fetchContent]);
+
   return (
     <div className="bg-white text-primary">
       {/* Hero Section */}
@@ -25,27 +33,25 @@ export const AboutPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div className="space-y-6">
             <h2 className="text-2xl sm:text-3xl font-bold font-heading uppercase text-primary">
-              Crafting Elegance For Every Celebration
+              {content.title}
             </h2>
             <p className="text-sm text-gray-600 leading-relaxed">
-              Founded with a passion for traditional attire, our platform has grown into a trusted destination for premium Panjabis, festive wear, and exclusive ethnic collections. We take pride in sourcing the finest fabrics—from rich silk blends to breathable pure cottons—ensuring absolute comfort without compromising on style.
+              {content.paragraph1}
             </p>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Whether it's Eid, weddings, or casual festive gatherings, our designs focus on intricate embroidery, refined cuts, and meticulous attention to detail.
-            </p>
-            <div className="pt-4">
+            {content.paragraph2 && <p className="text-sm text-gray-600 leading-relaxed">{content.paragraph2}</p>}
+            {content.buttonText && <div className="pt-4">
               <Link
-                to="/items?category=Men"
+                to={content.buttonLink}
                 className="inline-block bg-black text-white px-8 py-3 text-xs font-bold uppercase tracking-widest hover:bg-opacity-95 transition-all"
               >
-                Explore Collection
+                {content.buttonText}
               </Link>
-            </div>
+            </div>}
           </div>
 
           <div className="relative aspect-[4/3] overflow-hidden rounded-lg shadow-xl bg-gray-100">
             <img
-              src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=800"
+              src={content.imageUrl}
               alt="Our Workshop and Store"
               className="w-full h-full object-cover"
             />

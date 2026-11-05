@@ -5,17 +5,20 @@ import { Send } from "lucide-react";
 interface TelegramSettingsProps {
   data: {
     botToken: string;
+    botTokenConfigured?: boolean;
     chatId: string;
     notifyOnNewOrder: boolean;
   };
   onChange: (field: string, value: any) => void;
   onTest: () => void;
+  isTesting?: boolean;
 }
 
 export const TelegramSettings: React.FC<TelegramSettingsProps> = ({
   data,
   onChange,
   onTest,
+  isTesting = false,
 }) => {
   return (
     <div className="space-y-4 max-w-2xl">
@@ -34,13 +37,13 @@ export const TelegramSettings: React.FC<TelegramSettingsProps> = ({
         <div>
           <label className="block text-xs font-semibold text-gray-700 mb-1">Telegram Bot Token *</label>
           <input
-            type="text"
-            required
+            type="password"
             value={data.botToken}
             onChange={(e) => onChange("botToken", e.target.value)}
-            placeholder="e.g. 7123456789:AAFgH..."
+            placeholder={data.botTokenConfigured ? "Saved securely — leave blank to keep current token" : "Enter Telegram bot token"}
             className="w-full px-3.5 py-2 bg-white border border-borderLight rounded-xl text-sm font-mono outline-none focus:border-cardHeader"
           />
+          {data.botTokenConfigured && <p className="text-[11px] text-green-700 mt-1">A bot token is saved securely. It is never returned by the server.</p>}
         </div>
 
         <div>
@@ -69,9 +72,10 @@ export const TelegramSettings: React.FC<TelegramSettingsProps> = ({
           <button
             type="button"
             onClick={onTest}
-            className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-colors cursor-pointer"
+            disabled={isTesting}
+            className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Test Telegram Alert
+            {isTesting ? "Sending…" : "Test Telegram Alert"}
           </button>
         </div>
       </div>

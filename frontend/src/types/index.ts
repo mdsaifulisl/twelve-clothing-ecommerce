@@ -14,7 +14,7 @@ export interface Product {
   updatedAt?: string;
 }
 
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+export type OrderStatus = 'PENDING' | 'PROCESSING' | 'DELIVERED' | 'CANCELLED';
 
 export interface Order {
   id?: number;

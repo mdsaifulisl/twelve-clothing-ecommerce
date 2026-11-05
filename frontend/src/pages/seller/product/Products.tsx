@@ -1,41 +1,39 @@
-
-
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Plus, Search, Filter, Edit, Trash2, Layers } from "lucide-react";
 import { ProductModal } from "./ProductModal";
-import ProductData from "../../../data/products.json";
-
-export interface Product {
-  id: string;
-  title: string;
-  price: number;
-  discount: number;
-  category: string;
-  subCategory: string;
-  productType: string;
-  image: string[];
-  color: string;
-  availableSizes: string[];
-  description: string;
-  material: string;
-  fit: string;
-  careInstructions: string[];
-  sku: string;
-}
-
-// আপনার দেওয়া সম্পূর্ণ ১২টি JSON প্রোডাক্ট ডাটা
-const INITIAL_PRODUCTS: Product[] = ProductData;
+import { useProduct } from "../../../features/product/useProduct";
+import type { IProduct } from "../../../features/product/ProductType";
+import { useAppDispatch } from "../../../app/hooks";
+import { openModal } from "../../../features/alert/modalSlice";
+import productData from "../../../data/products.json"; // 🚀 আপনার ফেক ডাটা ইম্পোর্ট করা হলো
 
 export const Products: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const dispatch = useAppDispatch();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
+  // Redux হুক থেকে ডেটা এবং ফাংশনগুলো নিয়ে আসা হলো
+  const { products: serverProducts, isLoading, fetchAllProducts, removeProduct } = useProduct();
+
+  // কম্পোনেন্ট মাউন্ট হওয়ার সাথে সাথে সার্ভার থেকে প্রোডাক্ট ফেচ করা
+  useEffect(() => {
+    fetchAllProducts();
+  }, []);
+
+  // 🚀 ফলব্যাক লজিক: সার্ভারে ডেটা না থাকলে বা লোডিং শেষ হলে ফেক ডাটা (productData) ব্যবহার হবে
+  const products = useMemo(() => {
+    if (serverProducts && serverProducts.length > 0) {
+      return serverProducts;
+    }
+    // Type casting নিশ্চিত করার জন্য (যদি JSON-এর স্ট্রাকচার IProduct-এর সাথে মিলে যায়)
+    return (productData as unknown as IProduct[]) || [];
+  }, [serverProducts]);
+
   // মোডাল স্টেট
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+  const [productToEdit, setProductToEdit] = useState<IProduct | null>(null);
 
-  // ক্যাটাগরি তালিকা ফিল্টার
+  // ক্যাটাগরি তালিকা ফিল্টার (ডাইনামিকালি ডেটা থেকে আসবে)
   const categories = useMemo(() => {
     const set = new Set(products.map((p) => p.category));
     return ["All", ...Array.from(set)];
@@ -46,7 +44,7 @@ export const Products: React.FC = () => {
     return products.filter((product) => {
       const matchesSearch =
         product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.sku && product.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
         product.category.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCategory =
@@ -56,22 +54,22 @@ export const Products: React.FC = () => {
     });
   }, [products, searchTerm, selectedCategory]);
 
-  // নতুন প্রোডাক্ট যোগ করা অথবা আপডেট করা
-  const handleSaveProduct = (product: Product) => {
-    if (productToEdit) {
-      setProducts((prev) =>
-        prev.map((item) => (item.id === product.id ? product : item))
-      );
-    } else {
-      setProducts((prev) => [product, ...prev]);
-    }
-  };
-
-  // ডিলিট প্রোডাক্ট
-  const handleDeleteProduct = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-    }
+  // ডিলিট প্রোডাক্ট (ব্যাকএন্ড এপিআই কল সহ)
+  const handleDeleteProduct = (id: string, productTitle: string) => {
+    dispatch(
+      openModal({
+        title: "Delete Product Confirmation",
+        message: `Are you sure you want to delete "${productTitle}"? This action cannot be undone.`,
+        onConfirm: async () => {
+          try {
+            await removeProduct(id);
+            await fetchAllProducts();
+          } catch (error) {
+            console.error("Failed to delete product:", error);
+          }
+        },
+      })
+    );
   };
 
   // অ্যাড মডাল ওপেন
@@ -81,7 +79,7 @@ export const Products: React.FC = () => {
   };
 
   // এডিট মডাল ওপেন
-  const handleOpenEditModal = (product: Product) => {
+  const handleOpenEditModal = (product: IProduct) => {
     setProductToEdit(product);
     setIsModalOpen(true);
   };
@@ -136,248 +134,275 @@ export const Products: React.FC = () => {
         </div>
       </div>
 
-      {/* ৩. MOBILE VIEW: কার্ড লেআউট */}
-      <div className="grid grid-cols-1 gap-4 md:hidden">
-        {filteredProducts.length > 0 ? (
-          filteredProducts.map((product) => {
-            const finalPrice =
-              product.discount > 0
-                ? product.price - (product.price * product.discount) / 100
-                : product.price;
+      {/* লোডিং বা প্রোডাক্ট লিস্ট */}
+      {isLoading && serverProducts.length === 0 ? (
+        <div className="bg-white p-12 text-center rounded-2xl border border-borderLight text-gray-500 text-sm">
+          Loading products from server...
+        </div>
+      ) : (
+        <>
+          {/* ৩. MOBILE VIEW: কার্ড লেআউট */}
+          <div className="grid grid-cols-1 gap-4 md:hidden">
+            {filteredProducts.length > 0 ? (
+              filteredProducts.map((product) => {
+                const finalPrice =
+                  (product.discount ?? 0) > 0
+                    ? product.price -
+                      (product.price * (product.discount ?? 0)) / 100
+                    : product.price;
 
-            return (
-              <div
-                key={product.id}
-                className="bg-white p-4 rounded-2xl border border-borderLight shadow-xs space-y-3"
-              >
-                <div className="flex items-start gap-3">
-                  <img
-                    src={product.image[0]}
-                    alt={product.title}
-                    className="w-16 h-16 rounded-xl object-cover border border-borderLight shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-mono font-semibold px-2 py-0.5 bg-surface text-gray-500 rounded-md border border-borderLight">
-                        {product.sku}
-                      </span>
-                      <span className="text-xs font-semibold text-cardHeader">
-                        {product.productType}
-                      </span>
-                    </div>
-                    <h4 className="font-semibold text-primary text-sm mt-1 truncate">
-                      {product.title}
-                    </h4>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Color: <span className="font-medium text-gray-600">{product.color}</span>
-                    </p>
-                  </div>
-                </div>
+                const imageUrl = product.image?.[0]
+                  ? product.image[0].startsWith("http")
+                    ? product.image[0]
+                    : `http://localhost:5001${product.image[0]}`
+                  : "https://via.placeholder.com/150";
 
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-borderLight text-xs">
-                  <div>
-                    <span className="text-gray-400 block">Category:</span>
-                    <span className="font-medium text-primary flex items-center gap-1 mt-0.5">
-                      <Layers className="w-3 h-3 text-cardHeader" />
-                      {product.category}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-400 block">Price:</span>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="font-bold text-primary text-sm">
-                        ৳{finalPrice.toLocaleString("en-BD")}
-                      </span>
-                      {product.discount > 0 && (
-                        <span className="text-gray-400 line-through text-[11px]">
-                          ৳{product.price.toLocaleString("en-BD")}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-borderLight">
-                  <div className="flex items-center gap-1">
-                    {product.availableSizes.length > 0 ? (
-                      product.availableSizes.map((size, idx) => (
-                        <span
-                          key={idx}
-                          className="px-1.5 py-0.5 bg-surface text-gray-700 text-[10px] font-semibold rounded border border-borderLight"
-                        >
-                          {size}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-gray-400 italic">Free Size</span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleOpenEditModal(product)}
-                      className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteProduct(product.id)}
-                      className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="bg-white p-8 text-center rounded-2xl border border-borderLight text-gray-400 text-sm">
-            No products found matching your search.
-          </div>
-        )}
-      </div>
-
-      {/* ৪. DESKTOP VIEW: টেবিল লেআউট */}
-      <div className="hidden md:block bg-white rounded-2xl border border-borderLight shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-surface text-gray-500 text-xs uppercase tracking-wider border-b border-borderLight">
-                <th className="py-4 px-6">Product</th>
-                <th className="py-4 px-6">SKU</th>
-                <th className="py-4 px-6">Category</th>
-                <th className="py-4 px-6">Price</th>
-                <th className="py-4 px-6">Sizes</th>
-                <th className="py-4 px-6 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-borderLight text-sm text-gray-700">
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map((product) => {
-                  const finalPrice =
-                    product.discount > 0
-                      ? product.price - (product.price * product.discount) / 100
-                      : product.price;
-
-                  return (
-                    <tr
-                      key={product.id}
-                      className="hover:bg-surface/50 transition-colors"
-                    >
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={product.image[0]}
-                            alt={product.title}
-                            className="w-12 h-12 rounded-xl object-cover border border-borderLight shrink-0"
-                          />
-                          <div>
-                            <h4 className="font-semibold text-primary line-clamp-1">
-                              {product.title}
-                            </h4>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-xs text-gray-400 font-mono">
-                                Color: {product.color}
-                              </span>
-                              <span className="text-gray-300">•</span>
-                              <span className="text-xs text-cardHeader font-medium">
-                                {product.productType}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-6 font-mono text-xs font-semibold text-gray-600">
-                        {product.sku}
-                      </td>
-
-                      <td className="py-4 px-6">
-                        <div className="flex flex-col">
-                          <span className="font-medium text-primary flex items-center gap-1 text-xs">
-                            <Layers className="w-3.5 h-3.5 text-cardHeader" />
-                            {product.category}
+                return (
+                  <div
+                    key={product.id}
+                    className="bg-white p-4 rounded-2xl border border-borderLight shadow-xs space-y-3"
+                  >
+                    <div className="flex items-start gap-3">
+                      <img
+                        src={imageUrl}
+                        alt={product.title}
+                        className="w-16 h-16 rounded-xl object-cover border border-borderLight shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-mono font-semibold px-2 py-0.5 bg-surface text-gray-500 rounded-md border border-borderLight">
+                            {product.sku || "N/A"}
                           </span>
-                          <span className="text-xs text-gray-400 mt-0.5">
-                            {product.subCategory}
+                          <span className="text-xs font-semibold text-cardHeader">
+                            {product.productType}
                           </span>
                         </div>
-                      </td>
-
-                      <td className="py-4 px-6">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-primary">
-                            ৳ {finalPrice.toLocaleString("en-BD")}
+                        <h4 className="font-semibold text-primary text-sm mt-1 truncate">
+                          {product.title}
+                        </h4>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Color:{" "}
+                          <span className="font-medium text-gray-600">
+                            {product.color}
                           </span>
-                          {product.discount > 0 && (
-                            <span className="text-xs text-gray-400 line-through">
-                              ৳ {product.price.toLocaleString("en-BD")}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-borderLight text-xs">
+                      <div>
+                        <span className="text-gray-400 block">Category:</span>
+                        <span className="font-medium text-primary flex items-center gap-1 mt-0.5">
+                          <Layers className="w-3 h-3 text-cardHeader" />
+                          {product.category}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block">Price:</span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="font-bold text-primary text-sm">
+                            ৳{finalPrice.toLocaleString("en-BD")}
+                          </span>
+                          {(product.discount ?? 0) > 0 && (
+                            <span className="text-gray-400 line-through text-[11px]">
+                              ৳{product.price.toLocaleString("en-BD")}
                             </span>
                           )}
                         </div>
-                      </td>
+                      </div>
+                    </div>
 
-                      <td className="py-4 px-6">
-                        {product.availableSizes.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {product.availableSizes.map((size, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-0.5 bg-surface text-gray-700 text-xs font-semibold rounded-md border border-borderLight"
-                              >
-                                {size}
-                              </span>
-                            ))}
-                          </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-borderLight">
+                      <div className="flex items-center gap-1">
+                        {product.availableSizes?.length > 0 ? (
+                          product.availableSizes.map((size, idx) => (
+                            <span
+                              key={idx}
+                              className="px-1.5 py-0.5 bg-surface text-gray-700 text-[10px] font-semibold rounded border border-borderLight"
+                            >
+                              {size}
+                            </span>
+                          ))
                         ) : (
                           <span className="text-xs text-gray-400 italic">
                             Free Size
                           </span>
                         )}
-                      </td>
+                      </div>
 
-                      <td className="py-4 px-6 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            title="Edit"
-                            onClick={() => handleOpenEditModal(product)}
-                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            title="Delete"
-                            onClick={() => handleDeleteProduct(product.id)}
-                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleOpenEditModal(product)}
+                          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(product.id, product.title)}
+                          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="bg-white p-8 text-center rounded-2xl border border-borderLight text-gray-400 text-sm">
+                No products found matching your search.
+              </div>
+            )}
+          </div>
+
+          {/* ৪. DESKTOP VIEW: টেবিল লেআউট */}
+          <div className="hidden md:block bg-white rounded-2xl border border-borderLight shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-surface text-gray-500 text-xs uppercase tracking-wider border-b border-borderLight">
+                    <th className="py-4 px-6">Product</th>
+                    <th className="py-4 px-6">SKU</th>
+                    <th className="py-4 px-6">Category</th>
+                    <th className="py-4 px-6">Price</th>
+                    <th className="py-4 px-6">Sizes</th>
+                    <th className="py-4 px-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-borderLight text-sm text-gray-700">
+                  {filteredProducts.length > 0 ? (
+                    filteredProducts.map((product) => {
+                      const finalPrice =
+                        (product.discount ?? 0) > 0
+                          ? product.price -
+                            (product.price * (product.discount ?? 0)) / 100
+                          : product.price;
+
+                      const imageUrl = product.image?.[0]
+                        ? product.image[0].startsWith("http")
+                          ? product.image[0]
+                          : `http://localhost:5001${product.image[0]}`
+                        : "https://via.placeholder.com/150";
+
+                      return (
+                        <tr
+                          key={product.id}
+                          className="hover:bg-surface/50 transition-colors"
+                        >
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={imageUrl}
+                                alt={product.title}
+                                className="w-12 h-12 rounded-xl object-cover border border-borderLight shrink-0"
+                              />
+                              <div>
+                                <h4 className="font-semibold text-primary line-clamp-1">
+                                  {product.title}
+                                </h4>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-xs text-gray-400 font-mono">
+                                    Color: {product.color}
+                                  </span>
+                                  <span className="text-gray-300">•</span>
+                                  <span className="text-xs text-cardHeader font-medium">
+                                    {product.productType}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-6 font-mono text-xs font-semibold text-gray-600">
+                            {product.sku || "N/A"}
+                          </td>
+
+                          <td className="py-4 px-6">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-primary flex items-center gap-1 text-xs">
+                                <Layers className="w-3.5 h-3.5 text-cardHeader" />
+                                {product.category}
+                              </span>
+                              <span className="text-xs text-gray-400 mt-0.5">
+                                {product.subCategory}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-6">
+                            <div className="flex flex-col">
+                              <span className="font-bold text-primary">
+                                ৳ {finalPrice.toLocaleString("en-BD")}
+                              </span>
+                              {(product.discount ?? 0) > 0 && (
+                                <span className="text-xs text-gray-400 line-through">
+                                  ৳ {product.price.toLocaleString("en-BD")}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-6">
+                            {product.availableSizes?.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {product.availableSizes.map((size, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-2 py-0.5 bg-surface text-gray-700 text-xs font-semibold rounded-md border border-borderLight"
+                                  >
+                                    {size}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400 italic">
+                                Free Size
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-4 px-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                title="Edit"
+                                onClick={() => handleOpenEditModal(product)}
+                                className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                title="Delete"
+                                onClick={() => handleDeleteProduct(product.id, product.title)}
+                                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-12 text-center text-gray-400 text-sm"
+                      >
+                        No products found matching your search.
                       </td>
                     </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="py-12 text-center text-gray-400 text-sm"
-                  >
-                    No products found matching your search.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* প্রোডাক্ট মডাল (অ্যাড ও এডিট) */}
       <ProductModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveProduct}
         productToEdit={productToEdit}
       />
     </div>

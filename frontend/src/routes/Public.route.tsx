@@ -2,6 +2,7 @@
 import { Route } from "react-router-dom";
 import { AuthPage } from "../pages/auth/AuthPage";
 import { CheckoutPage } from "../pages/public/checkout/CheckoutPage";
+import { OrderTrackingPage } from "../pages/public/checkout/OrderTrackingPage";
 
 // pages
 import { HomePage } from "../pages/public/home/HomePage";
@@ -11,6 +12,8 @@ import { AboutPage } from "../pages/public/about/AboutPage";
 import { StoreLocatorPage } from "../pages/public/about/StoreLocatorPage";
 import { ContactPage } from "../pages/public/about/ContactPage";
 import { PrivacyPolicyPage } from "../pages/public/privacy-policy/PrivacyPolicyPage";
+import { TermsPage } from "../pages/public/terms/TermsPage";
+import { FaqPage } from "../pages/public/faq/FaqPage";
 
 
 export const publicRoutes = (
@@ -19,11 +22,14 @@ export const publicRoutes = (
     <Route path="/about" element={<AboutPage />} />
     <Route path="/login" element={<AuthPage />} />
     <Route path="/checkout" element={<CheckoutPage />} />
+    <Route path="/order-tracking" element={<OrderTrackingPage />} />
     <Route path="/items" element={<ItemsPage />} />
     <Route path="/items/:id" element={<ItemDetailsPage />} />
     <Route path="/stores" element={<StoreLocatorPage />} />
     <Route path="/contact" element={<ContactPage />} />
     <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+    <Route path="/terms" element={<TermsPage />} />
+    <Route path="/faq" element={<FaqPage />} />
   </>
 );
 

@@ -24,6 +24,7 @@ export const BrandingSettings: React.FC<BrandingSettingsProps> = ({
         {/* লোগো */}
         <div className="space-y-2">
           <label className="block text-xs font-semibold text-gray-700">Main Header Logo</label>
+          <p className="text-[11px] text-gray-500">Recommended size: <strong>600 × 200 px</strong> (horizontal logo). PNG, JPG, or WebP; maximum 5 MB.</p>
           <div className="border-2 border-dashed border-borderLight rounded-2xl p-4 text-center bg-surface hover:border-cardHeader transition-colors relative cursor-pointer">
             <input
               type="file"
@@ -46,6 +47,7 @@ export const BrandingSettings: React.FC<BrandingSettingsProps> = ({
         {/* ফেভআইকন */}
         <div className="space-y-2">
           <label className="block text-xs font-semibold text-gray-700">Browser Favicon Icon</label>
+          <p className="text-[11px] text-gray-500">Recommended size: <strong>256 × 256 px</strong> (square icon). PNG, JPG, or WebP; maximum 5 MB.</p>
           <div className="border-2 border-dashed border-borderLight rounded-2xl p-4 text-center bg-surface hover:border-cardHeader transition-colors relative cursor-pointer">
             <input
               type="file"

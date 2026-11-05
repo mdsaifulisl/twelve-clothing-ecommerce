@@ -7,7 +7,7 @@ interface AlertState {
   message: string;
   type: AlertType;
   title?: string;
-  isToast?: boolean; // নতুন প্রপার্টি: এটি নরমাল মডাল নাকি টোস্ট নোটিফিকেশন তা বোঝার জন্য
+  isToast?: boolean; 
 }
 
 const initialState: AlertState = {

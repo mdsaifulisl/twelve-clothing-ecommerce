@@ -4,9 +4,10 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, User, Heart, ShoppingBag, ChevronDown, Menu, X } from 'lucide-react';
 
-import productsData from '../../data/products.json';
 import { useSearch } from '../../features/search/useSearch';
 import { useCart } from '../../features/cart/useCart';
+import { useProduct } from '../../features/product/useProduct';
+import { usePublicSettings } from '../../features/settings/usePublicSettings';
 
 interface ProductItem {
   id: string;
@@ -34,87 +35,81 @@ interface NavCategory {
 export const Navbar: React.FC = () => {
   const { openSearch } = useSearch();
   const { openCart, totalQuantity } = useCart();
+  const { settings } = usePublicSettings();
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
+  const storeName = settings?.general.storeName || 'Panjabi Order System';
+  const logoUrl = settings?.branding.logoUrl
+    ? settings.branding.logoUrl.startsWith('http') ? settings.branding.logoUrl : `http://localhost:5001${settings.branding.logoUrl}`
+    : null;
 
-  // products.json theke dynamic categories & banner generate kora
+  React.useEffect(() => {
+    setLogoLoadFailed(false);
+  }, [logoUrl]);
+
+  const { fetchAllProducts, products: serverProducts } = useProduct();
+
+  React.useEffect(() => {
+    fetchAllProducts();
+  }, []);
+
+  // 🚀 ডাটাবেজ বা useProduct থেকে সম্পূর্ণ ডাইনামিক ক্যাটাগরি ও সাব-ক্যাটাগরি জেনারেট করা
   const navCategories = useMemo<NavCategory[]>(() => {
-    const products = productsData as ProductItem[];
+    const products = (serverProducts as ProductItem[]) || [];
 
+    // ১. ডাটাবেজে যতগুলো ইউনিক ক্যাটাগরি আছে সেগুলো ডাইনামিক্যালি বের করা
+    const uniqueCategories = Array.from(new Set(products.map((p) => p.category))).filter(Boolean);
+
+    // ২. নির্দিষ্ট ক্যাটাগরির সাব-ক্যাটাগরিগুলো বের করার ফাংশন
     const getSubCategories = (catName: string) => {
       const filtered = products.filter(
-        (p) => p.category.toLowerCase() === catName.toLowerCase()
+        (p) => p.category?.toLowerCase() === catName.toLowerCase()
       );
       return Array.from(new Set(filtered.map((p) => p.subCategory))).filter(Boolean);
     };
 
+    // ৩. নির্দিষ্ট ক্যাটাগরির জন্য ব্যানার ইমেজ খুঁজে বের করা
     const getBannerImage = (catName: string) => {
       const found = products.find(
-        (p) => p.category.toLowerCase() === catName.toLowerCase() && p.image && p.image.length > 0
+        (p) => p.category?.toLowerCase() === catName.toLowerCase() && p.image && p.image.length > 0
       );
       return found ? found.image![0] : undefined;
     };
 
-    const menSubCats = getSubCategories('Men');
-    const womenSubCats = getSubCategories('Women');
-    const kidsSubCats = getSubCategories('Kids');
+    // ৪. ডাইনামিক ক্যাটাগরি লিস্ট তৈরি (কোনো স্ট্যাটিক ফলব্যাক ছাড়া)
+    const dynamicCategories: NavCategory[] = uniqueCategories.map((catName) => {
+      const subCats = getSubCategories(catName);
 
+      // সাব-ক্যাটাগরিগুলোকে দুটি কলামে ভাগ করা (যদি থাকে)
+      const midPoint = Math.ceil(subCats.length / 2);
+      const col1Items = subCats.slice(0, midPoint);
+      const col2Items = subCats.slice(midPoint);
+
+      const columns: NavColumn[] = [];
+      if (col1Items.length > 0) {
+        columns.push({ title: 'Collections', items: col1Items });
+      }
+      if (col2Items.length > 0) {
+        columns.push({ title: 'More Items', items: col2Items });
+      }
+
+      // যদি সাব-ক্যাটাগরি না থাকে, তবে ড্রপডাউন ফলস হবে, আর থাকলে ট্রু
+      const hasDropdown = subCats.length > 0;
+
+      return {
+        name: catName,
+        path: `/items?category=${encodeURIComponent(catName)}`,
+        hasDropdown,
+        columns: hasDropdown ? columns : undefined,
+        bannerImage: getBannerImage(catName) || 'https://images.unsplash.com/photo-1621452773781-0f992fd1f5cb?auto=format&fit=crop&q=80&w=400',
+      };
+    });
+
+    // ৫. অতিরিক্ত ফিক্সড মেনুগুলো (যেমন: All Item, Accessories, Seller ইত্যাদি) যুক্ত করা
     return [
-      {
-        name: 'Men',
-        path: '/items?category=Men',
-        hasDropdown: true,
-        columns: [
-          {
-            title: 'Tops',
-            items: menSubCats.filter((s) => !['Pajama', 'Pant', 'Shorts'].some((b) => s.includes(b))).length > 0
-              ? menSubCats.filter((s) => !['Pajama', 'Pant', 'Shorts'].some((b) => s.includes(b)))
-              : ['Panjabi', 'Casual Shirt'],
-          },
-          {
-            title: 'Bottoms',
-            items: ['Pajama', 'Denim Pant', 'Twill Pant', 'Shorts'],
-          },
-        ],
-        bannerImage: getBannerImage('Men') || 'https://images.unsplash.com/photo-1621452773781-0f992fd1f5cb?auto=format&fit=crop&q=80&w=400',
-      },
-      {
-        name: 'Women',
-        path: '/items?category=Women',
-        hasDropdown: true,
-        columns: [
-          {
-            title: 'Tops',
-            items: womenSubCats.length > 0 ? womenSubCats : ['Three Piece', 'Sharee', 'Gown', 'Kurti'],
-          },
-          {
-            title: 'Bottoms',
-            items: ['Palazzo', 'Leggings', 'Trousers', 'Skirt'],
-          },
-        ],
-        bannerImage: getBannerImage('Women') || 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&q=80&w=400',
-      },
-      {
-        name: 'Kids',
-        path: '/items?category=Kids',
-        hasDropdown: true,
-        columns: [
-          {
-            title: "Boy's Collection",
-            items: kidsSubCats.filter((s) => s.toLowerCase().includes('boy'))['length'] > 0
-              ? kidsSubCats.filter((s) => s.toLowerCase().includes('boy'))
-              : ['Boys Panjabi', 'Boys Kabli', 'Boys T-Shirt', 'Boys Pant'],
-          },
-          {
-            title: "Girl's Collection",
-            items: kidsSubCats.filter((s) => s.toLowerCase().includes('girl'))['length'] > 0
-              ? kidsSubCats.filter((s) => s.toLowerCase().includes('girl'))
-              : ['Girls Frock', 'Girls Kurti', 'Girls Three Piece'],
-          },
-        ],
-        bannerImage: getBannerImage('Kids') || 'https://images.unsplash.com/photo-1543332164-6e82f355badc?auto=format&fit=crop&q=80&w=400',
-      },
+      ...dynamicCategories,
       {
         name: 'All Item',
         path: '/items?category=All%20Item',
@@ -131,7 +126,7 @@ export const Navbar: React.FC = () => {
         hasDropdown: false,
       },
     ];
-  }, []);
+  }, [serverProducts]);
 
   const toggleMobileCategory = (name: string) => {
     setExpandedMobileCategory((prev) => (prev === name ? null : name));
@@ -141,7 +136,7 @@ export const Navbar: React.FC = () => {
     <header className="sticky top-0 z-50 bg-white border-b border-borderLight shadow-sm">
       {/* Top Banner */}
       <div className="bg-cardAccent text-white text-xs text-center py-1 font-medium px-2">
-        বড়দিন ও ঈদ কালেকশনে চলছে আকর্ষণীয় ডিসকাউন্ট!
+        নতুন কালেকশনে চলছে আকর্ষণীয় ডিসকাউন্ট!
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -150,25 +145,20 @@ export const Navbar: React.FC = () => {
           {/* Logo (Left side) */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <img 
-                src="/logos.png" 
-                alt="Panjabi Order System" 
+              {logoUrl && !logoLoadFailed && <img
+                src={logoUrl}
+                alt={storeName}
                 className="h-10 md:h-12 w-auto object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  if (e.currentTarget.nextElementSibling) {
-                    (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
-                  }
-                }}
-              />
-              <div className="hidden items-center gap-2">
+                onError={() => setLogoLoadFailed(true)}
+              />}
+              {(!logoUrl || logoLoadFailed) && <div className="flex items-center gap-2">
                 <div className="bg-cardHeader text-white font-bold px-2 py-1 rounded text-lg md:text-xl tracking-wider">
-                  PANJABI
+                  {storeName}
                 </div>
                 <span className="font-heading font-bold text-lg md:text-xl tracking-widest text-primary hidden sm:inline">
-                  ORDER SYS
+                  {settings?.general.tagline || "ORDER SYS"}
                 </span>
-              </div>
+              </div>}
             </Link>
           </div>
 
@@ -183,9 +173,7 @@ export const Navbar: React.FC = () => {
               >
                 <Link 
                   to={category.path} 
-                  className={`flex items-center gap-1 text-sm font-semibold transition-colors ${
-                    category.name === "20% OFF" ? "text-red-600 font-bold hover:text-red-700" : "text-primary hover:text-cardHeader"
-                  }`}
+                  className="flex items-center gap-1 text-sm font-semibold text-primary hover:text-cardHeader transition-colors"
                 >
                   {category.name}
                   {category.hasDropdown && <ChevronDown size={16} />}
@@ -203,7 +191,7 @@ export const Navbar: React.FC = () => {
                           {col.items.map((item, itemIdx) => (
                             <li key={itemIdx}>
                               <Link 
-                                to={`/items?category=${category.name}&subCategory=${encodeURIComponent(item)}`} 
+                                to={`/items?category=${encodeURIComponent(category.name)}&subCategory=${encodeURIComponent(item)}`} 
                                 className="hover:text-cardHeader transition-colors"
                               >
                                 {item}
@@ -274,9 +262,7 @@ export const Navbar: React.FC = () => {
                   <Link 
                     to={category.path}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`text-base font-medium ${
-                      category.name === "20% OFF" ? "text-red-600 font-bold" : "text-primary"
-                    }`}
+                    className="text-base font-medium text-primary"
                   >
                     {category.name}
                   </Link>
@@ -307,7 +293,7 @@ export const Navbar: React.FC = () => {
                           {col.items.map((item, itemIdx) => (
                             <Link 
                               key={itemIdx} 
-                              to={`/items?category=${category.name}&subCategory=${encodeURIComponent(item)}`}
+                              to={`/items?category=${encodeURIComponent(category.name)}&subCategory=${encodeURIComponent(item)}`}
                               onClick={() => setIsMobileMenuOpen(false)}
                               className="hover:text-cardHeader py-1"
                             >
@@ -327,3 +313,5 @@ export const Navbar: React.FC = () => {
     </header>
   );
 };
+
+export default Navbar;

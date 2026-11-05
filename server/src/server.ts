@@ -4,7 +4,7 @@ import { connectDB } from './config/prisma.js';
 
 dotenv.config();
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5001;
 
 const startServer = async () => {
   try {
@@ -12,9 +12,18 @@ const startServer = async () => {
     await connectDB();
 
     // ২. এক্সপ্রেস সার্ভার চালু করা
-    app.listen(PORT, () => {
-      console.log(`🚀 Server is running on http://localhost:${PORT}`);
-    });
+    const localSellerApiEnabled =
+      process.env.NODE_ENV === 'development' && process.env.ENABLE_LOCAL_SELLER_API === 'true';
+    if (localSellerApiEnabled) {
+      // Keep the explicitly opted-in test server unreachable from non-local interfaces.
+      app.listen(PORT, '127.0.0.1', () => {
+        console.log(`🚀 Local seller API test server is running on http://127.0.0.1:${PORT}`);
+      });
+    } else {
+      app.listen(PORT, () => {
+        console.log(`🚀 Server is running on http://localhost:${PORT}`);
+      });
+    }
   } catch (error: any) {
     console.error('❌ Failed to start server:', error.message);
     process.exit(1);

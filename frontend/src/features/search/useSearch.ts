@@ -3,7 +3,7 @@ import { setSearchQuery, toggleSearchModal } from './searchSlice';
 
 export const useSearch = () => {
   const dispatch = useAppDispatch();
-  const { query, isOpen, searchResults } = useAppSelector((state) => state.search);
+  const { query, isOpen } = useAppSelector((state) => state.search);
 
   const handleQueryChange = (newQuery: string) => {
     dispatch(setSearchQuery(newQuery));
@@ -20,7 +20,6 @@ export const useSearch = () => {
   return {
     query,
     isOpen,
-    searchResults,
     handleQueryChange,
     openSearch,
     closeSearch,

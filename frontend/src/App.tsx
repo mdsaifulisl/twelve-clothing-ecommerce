@@ -2,6 +2,7 @@
 
 import { AppRoutes } from "./routes/App.route";
 
+
 function App() {
   return (
     <>

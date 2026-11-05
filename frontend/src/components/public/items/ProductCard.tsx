@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../../features/cart/useCart";
 import { useAppDispatch } from "../../../app/hooks";
 import { showAlertModal } from "../../../features/alert/alertSlice";
+
 export interface Product {
   sku: string;
   id: string;
@@ -35,17 +36,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     ? Math.round(product.price - (product.price * product.discount) / 100)
     : product.price;
 
-  const handleActionClick = () => {
+  // কমন অ্যাড টু কার্ট লজিক
+  const handleAddToCart = () => {
     if (hasSizes && !selectedSize) {
       dispatch(
         showAlertModal({
-          message: "দয়া করে প্রথমে একটি সাইজ সিলেক্ট করুন!",
+          message: "Please select a size first!",
           type: "error", // 'success' | 'error' | 'info'
-          title: "সাইজ প্রয়োজন",
+          title: "Select Size",
         }),
       );
-      // alert('দয়া করে প্রথমে একটি সাইজ সিলেক্ট করুন!');
-      return;
+      return false;
     }
 
     addItem({
@@ -58,14 +59,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       sku: product.sku,
     });
 
-    // dispatch(
-    //   showAlertModal({
-    //     message: "পণ্যটি কার্টে যুক্ত হয়েছে",
-    //     type: "success",
-    //     title: "সফল হয়েছে!",
-    //     isToast: true,
-    //   }),
-    // );
+    return true;
+  };
+
+  // Add to Cart বাটন ক্লিক হ্যান্ডলার
+  const handleAddToCartClick = () => {
+    handleAddToCart();
+  };
+
+  // Buy Now বাটন ক্লিক হ্যান্ডলার
+  const handleBuyNowClick = () => {
+    const success = handleAddToCart();
+    if (success) {
+      navigate("/checkout");
+    }
   };
 
   return (
@@ -120,9 +127,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <div className="flex flex-wrap gap-1 mt-3">
             {product.availableSizes!.map((size) => (
               <button
+                type="button"
                 key={size}
                 onClick={() => setSelectedSize(size)}
-                className={`px-2.5 py-1 text-[11px] font-medium border transition-colors ${
+                className={`px-2.5 py-1 text-[11px] font-medium border transition-colors cursor-pointer ${
                   selectedSize === size
                     ? "border-black bg-black text-white"
                     : "border-gray-200 text-gray-600 hover:border-gray-400"
@@ -142,17 +150,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </div>
       </div>
 
-      {/* Dynamic Button: Choose Size vs Add to Cart */}
-      <div className="mt-4 pt-2">
+      {/* Action Buttons: Add to Cart & Buy Now */}
+      <div className="mt-4 pt-2 space-y-2">
         <button
-          onClick={handleActionClick}
-          className={`w-full py-2.5 text-xs font-medium transition-colors border ${
+          type="button"
+          onClick={handleAddToCartClick}
+          className={`w-full py-2 text-xs font-medium transition-colors border cursor-pointer ${
             hasSizes && !selectedSize
               ? "border-gray-300 text-primary bg-white hover:border-black"
-              : "border-black bg-black text-white hover:bg-opacity-90"
+              : "border-gray-300 text-black bg-gray-50 hover:bg-gray-100"
           }`}
         >
           {hasSizes && !selectedSize ? "Choose Size" : "Add to Cart"}
+        </button>
+        <button
+          type="button"
+          onClick={handleBuyNowClick}
+          className="w-full py-2.5 text-xs font-semibold bg-black text-white hover:bg-opacity-90 transition-colors cursor-pointer"
+        >
+          Buy It Now
         </button>
       </div>
     </div>

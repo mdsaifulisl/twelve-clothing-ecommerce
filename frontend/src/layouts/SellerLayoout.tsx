@@ -3,14 +3,17 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "../components/seller/Sidebar";
 import { Menu, Bell, User, Search } from "lucide-react";
 import { CustomAlert } from "../components/common/CustomAlert";
+import { ScrollToTop } from '../utils/ScrollToTop';
 
 export const SellerLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
 
   return (
     <div className="min-h-screen bg-surface flex font-sans">
       {/* Sidebar */}
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      <ScrollToTop />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col md:pl-64">

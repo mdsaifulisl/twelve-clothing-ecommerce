@@ -9,6 +9,8 @@ import { ActivityLogs } from "../pages/seller/settings/ActivityLogs";
 import { Settings } from "../pages/seller/settings/Settings";
 import { StoreLocations } from "../pages/seller/store-locations/StoreLocations";
 import { AboutSettings } from "../pages/seller/about/AboutSettings";
+import { TermsSettings } from "../pages/seller/terms/TermsSettings";
+import { FaqSettings } from "../pages/seller/faq/FaqSettings";
 
 export const sellerRoutes = (
   <>
@@ -22,5 +24,7 @@ export const sellerRoutes = (
     <Route path="settings" element={<Settings />} />
     <Route path="locations" element={<StoreLocations />} />
     <Route path="about-settings" element={<AboutSettings />} />
+    <Route path="terms-settings" element={<TermsSettings />} />
+    <Route path="faq-settings" element={<FaqSettings />} />
   </>
 );

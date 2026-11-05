@@ -5,13 +5,16 @@ import { MainLayout } from '../layouts/MainLayout';
 import { SellerLayout } from '../layouts/SellerLayoout';
 import { publicRoutes } from './Public.route';
 import { sellerRoutes } from './Seller.route';
-
+import { ConfirmModal } from '../components/common/ConfirmModal';
+import { CustomAlert } from '../components/common/CustomAlert';
 // err
 import { NotFoundPage } from '../pages/err/NotFoundPage';
+
 
 export const AppRoutes: React.FC = () => {
 
     return (
+        <>
         <Routes>
             <Route path="/" element={<MainLayout />} >
                 {publicRoutes}
@@ -24,6 +27,10 @@ export const AppRoutes: React.FC = () => {
             <Route path="*" element={<NotFoundPage />} />
 
         </Routes>
+        
+        <ConfirmModal />
+        <CustomAlert />
+        </>
     );
 
     

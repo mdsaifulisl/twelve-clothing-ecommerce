@@ -1,35 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MapPin, Phone, Clock, Plus, Trash2, ExternalLink, CalendarX } from 'lucide-react';
-
-export interface StoreLocation {
-  id: string;
-  division: string;
-  name: string;
-  address: string;
-  phone: string;
-  offDay: string;
-  openingTime: string;
-  closingTime: string;
-  mapLink: string;
-}
+import { useAppDispatch } from '../../../app/hooks';
+import { showAlertModal } from '../../../features/alert/alertSlice';
+import { openModal } from '../../../features/alert/modalSlice';
+import { useStoreLocations } from '../../../features/storeLocation/useStoreLocations';
+import type { CreateStoreLocationRequest } from '../../../features/storeLocation/storeLocationType';
 
 export const StoreLocations: React.FC = () => {
-  const [locations, setLocations] = useState<StoreLocation[]>([
-    {
-      id: "3",
-      division: "Dhaka Division",
-      name: "Uttara Flagship",
-      address: "House # 12, Road # 11, Sector # 1, Uttara, Dhaka - 1230",
-      phone: "01847-425568",
-      offDay: "Tuesday",
-      openingTime: "10:00 AM",
-      closingTime: "10:00 PM",
-      mapLink: "https://maps.google.com"
-    }
-  ]);
+  const dispatch = useAppDispatch();
+  const { locations, isLoading, isSaving, error, loadLocations, createLocation, deleteLocation } = useStoreLocations();
+  const [locationsLoaded, setLocationsLoaded] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState<Partial<StoreLocation>>({
+  const [formData, setFormData] = useState<CreateStoreLocationRequest>({
     division: "Dhaka Division",
     name: "",
     address: "",
@@ -40,38 +23,48 @@ export const StoreLocations: React.FC = () => {
     mapLink: ""
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newLocation: StoreLocation = {
-      id: Date.now().toString(),
-      division: formData.division || "Dhaka Division",
-      name: formData.name || "",
-      address: formData.address || "",
-      phone: formData.phone || "",
-      offDay: formData.offDay || "",
-      openingTime: formData.openingTime || "",
-      closingTime: formData.closingTime || "",
-      mapLink: formData.mapLink || "#"
-    };
+  useEffect(() => {
+    const request = loadLocations();
+    void request.finally(() => setLocationsLoaded(true));
+    return () => request.abort();
+  }, [loadLocations]);
 
-    setLocations([...locations, newLocation]);
-    setIsModalOpen(false);
-    setFormData({
-      division: "Dhaka Division",
-      name: "",
-      address: "",
-      phone: "",
-      offDay: "Sunday",
-      openingTime: "10:00 AM",
-      closingTime: "10:00 PM",
-      mapLink: ""
-    });
+  const resetForm = () => setFormData({
+    division: "Dhaka Division",
+    name: "",
+    address: "",
+    phone: "",
+    offDay: "Sunday",
+    openingTime: "10:00 AM",
+    closingTime: "10:00 PM",
+    mapLink: "",
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createLocation(formData);
+      setIsModalOpen(false);
+      resetForm();
+      dispatch(showAlertModal({ message: "Store location added.", type: "success", isToast: true }));
+    } catch (cause) {
+      dispatch(showAlertModal({ message: String(cause), type: "error", isToast: true }));
+    }
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this store location?")) {
-      setLocations(locations.filter(loc => loc.id !== id));
-    }
+  const handleDelete = (id: string, name: string) => {
+    dispatch(openModal({
+      title: "Delete store location",
+      message: `Are you sure you want to delete “${name}”?`,
+      onConfirm: async () => {
+        try {
+          await deleteLocation(id);
+          dispatch(showAlertModal({ message: "Store location deleted.", type: "success", isToast: true }));
+        } catch (cause) {
+          dispatch(showAlertModal({ message: String(cause), type: "error", isToast: true }));
+        }
+      },
+    }));
   };
 
   return (
@@ -91,9 +84,15 @@ export const StoreLocations: React.FC = () => {
         </button>
       </div>
 
+      {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+
       {/* Locations Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {locations.map((loc) => (
+        {isLoading || !locationsLoaded ? (
+          <div className="md:col-span-2 lg:col-span-3 rounded-2xl border border-borderLight bg-white p-10 text-center text-sm text-gray-400">Loading store locations…</div>
+        ) : locations.length === 0 ? (
+          <div className="md:col-span-2 lg:col-span-3 rounded-2xl border border-borderLight bg-white p-10 text-center text-sm text-gray-400">No store locations found. Add a new outlet to get started.</div>
+        ) : locations.map((loc) => (
           <div key={loc.id} className="bg-white rounded-2xl border border-borderLight p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-2">
@@ -104,7 +103,7 @@ export const StoreLocations: React.FC = () => {
                   <h3 className="font-heading font-bold text-lg text-primary mt-2">{loc.name}</h3>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => handleDelete(loc.id)} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors">
+                  <button disabled={isSaving} onClick={() => handleDelete(loc.id, loc.name)} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors disabled:opacity-50">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -243,16 +242,17 @@ export const StoreLocations: React.FC = () => {
               <div className="flex justify-end gap-3 pt-4 border-t border-borderLight">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => { setIsModalOpen(false); resetForm(); }}
                   className="px-4 py-2 border border-borderLight rounded-xl text-xs font-bold text-gray-600 hover:bg-surface"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-cardHeader text-white rounded-xl text-xs font-bold hover:bg-cardAccent"
+                  disabled={isSaving}
+                  className="px-5 py-2 bg-cardHeader text-white rounded-xl text-xs font-bold hover:bg-cardAccent disabled:opacity-60"
                 >
-                  Save Store
+                  {isSaving ? "Saving…" : "Save Store"}
                 </button>
               </div>
             </form>

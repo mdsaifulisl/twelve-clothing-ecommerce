@@ -1,36 +1,14 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Plus, Trash2, Edit, Upload, X } from "lucide-react";
-
-export interface BannerSlide {
-  id: number | string;
-  image: string;
-  title: string;
-  subtitle: string;
-  buttonText: string;
-  link: string;
-}
-
-const INITIAL_SLIDES: BannerSlide[] = [
-  {
-    id: 1,
-    image: "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&q=80&w=1600",
-    title: "Men's WESTERN Styles",
-    subtitle: "Discover the latest trend in Men Casuals",
-    buttonText: "SHOP NOW",
-    link: "/men",
-  },
-  {
-    id: 2,
-    image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=1600",
-    title: "NEW EID COLLECTION",
-    subtitle: "Exclusive Festive Wear for Everyone",
-    buttonText: "EXPLORE ALL",
-    link: "/all-item",
-  },
-];
+import { useAppDispatch } from "../../../app/hooks";
+import { showAlertModal } from "../../../features/alert/alertSlice";
+import { openModal } from "../../../features/alert/modalSlice";
+import { useSlider } from "../../../features/slider/useSlider";
+import type { BannerSlide } from "../../../features/slider/sliderType";
 
 export const Sliders: React.FC = () => {
-  const [slides, setSlides] = useState<BannerSlide[]>(INITIAL_SLIDES);
+  const dispatch = useAppDispatch();
+  const { slides, isLoading, isSaving, error, loadSliders, persistSlider, deleteSlide } = useSlider();
   
   // মোডাল এবং এডিট স্টেট
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,18 +20,24 @@ export const Sliders: React.FC = () => {
     subtitle: "",
     buttonText: "SHOP NOW",
     link: "/shop",
-    image: "",
   });
 
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+
+  useEffect(() => {
+    const request = loadSliders();
+    return () => request.abort();
+  }, [loadSliders]);
 
   // ফাইল আপলোড হ্যান্ডলার (ফাইল থেকে প্রিভিউ ও স্ট্রিং জেনারেট করা)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const previewUrl = URL.createObjectURL(file);
+      if (imagePreview.startsWith('blob:')) URL.revokeObjectURL(imagePreview);
       setImagePreview(previewUrl);
-      setFormData((prev) => ({ ...prev, image: previewUrl }));
+      setSelectedImage(file);
     }
   };
 
@@ -65,8 +49,8 @@ export const Sliders: React.FC = () => {
       subtitle: "",
       buttonText: "SHOP NOW",
       link: "/shop",
-      image: "",
     });
+    setSelectedImage(null);
     setImagePreview("");
     setIsModalOpen(true);
   };
@@ -79,44 +63,51 @@ export const Sliders: React.FC = () => {
       subtitle: slide.subtitle,
       buttonText: slide.buttonText,
       link: slide.link,
-      image: slide.image,
     });
+    setSelectedImage(null);
     setImagePreview(slide.image);
     setIsModalOpen(true);
   };
 
   // স্লাইড ডিলিট হ্যান্ডলার
-  const handleDelete = (id: number | string) => {
-    if (window.confirm("Are you sure you want to delete this slider?")) {
-      setSlides((prev) => prev.filter((slide) => slide.id !== id));
-    }
+  const handleDelete = (slide: BannerSlide) => {
+    dispatch(openModal({
+      title: "Delete banner slider",
+      message: `Are you sure you want to delete “${slide.title}”?`,
+      onConfirm: async () => {
+        try {
+          await deleteSlide(slide.id);
+          dispatch(showAlertModal({ message: "Slider deleted.", type: "success", isToast: true }));
+        } catch (cause) {
+          dispatch(showAlertModal({ message: String(cause), type: "error", isToast: true }));
+        }
+      },
+    }));
   };
 
   // সাবমিট হ্যান্ডলার (অ্যাড অথবা এডিট)
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.image) {
-      alert("Please provide a title and upload an image.");
+    if (!formData.title.trim() || (!slideToEdit && !selectedImage)) {
+      dispatch(showAlertModal({ message: "Please provide a title and upload an image.", type: "error", isToast: true }));
       return;
     }
 
-    if (slideToEdit) {
-      // এডিট আপডেট
-      setSlides((prev) =>
-        prev.map((item) =>
-          item.id === slideToEdit.id ? { ...item, ...formData } : item
-        )
-      );
-    } else {
-      // নতুন স্লাইড যোগ
-      const newSlide: BannerSlide = {
-        id: Date.now(),
-        ...formData,
-      };
-      setSlides((prev) => [...prev, newSlide]);
-    }
+    const payload = new FormData();
+    payload.append("title", formData.title.trim());
+    payload.append("subtitle", formData.subtitle.trim());
+    payload.append("buttonText", formData.buttonText.trim());
+    payload.append("link", formData.link.trim());
+    if (selectedImage) payload.append("images", selectedImage);
 
-    setIsModalOpen(false);
+    try {
+      await persistSlider(slideToEdit?.id, payload);
+      if (imagePreview.startsWith('blob:')) URL.revokeObjectURL(imagePreview);
+      setIsModalOpen(false);
+      dispatch(showAlertModal({ message: slideToEdit ? "Slider updated." : "Slider created.", type: "success", isToast: true }));
+    } catch (cause) {
+      dispatch(showAlertModal({ message: String(cause), type: "error", isToast: true }));
+    }
   };
 
   return (
@@ -140,9 +131,13 @@ export const Sliders: React.FC = () => {
         </button>
       </div>
 
+      {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+
       {/* স্লাইডার লিস্ট গ্রিড */}
       <div className="grid grid-cols-1 gap-6">
-        {slides.length > 0 ? (
+        {isLoading ? (
+          <div className="bg-white p-12 text-center rounded-2xl border border-borderLight text-gray-400 text-sm">Loading banner slides…</div>
+        ) : slides.length > 0 ? (
           slides.map((slide) => (
             <div
               key={slide.id}
@@ -187,7 +182,8 @@ export const Sliders: React.FC = () => {
                   <Edit className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={() => handleDelete(slide.id)}
+                  onClick={() => handleDelete(slide)}
+                  disabled={isSaving}
                   className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
                   title="Delete Slide"
                 >
@@ -273,12 +269,16 @@ export const Sliders: React.FC = () => {
 
               {/* ফাইল আপলোড ইনপুট */}
               <div className="space-y-2">
-                <label className="block text-xs font-semibold text-gray-700">Banner Image File *</label>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700">Banner Image File *</label>
+                  <p className="mt-1 text-[11px] text-gray-500">Recommended size: 1600 × 600 px (landscape). The full image remains visible on mobile, with a soft blurred background filling the banner.</p>
+                </div>
                 <div className="border-2 border-dashed border-borderLight rounded-2xl p-4 text-center bg-surface hover:border-cardHeader transition-colors relative cursor-pointer">
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
+                    required={!slideToEdit}
                     className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                   />
                   <div className="flex flex-col items-center justify-center space-y-1 pointer-events-none">
@@ -307,9 +307,10 @@ export const Sliders: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-cardHeader text-white font-semibold text-sm rounded-xl hover:bg-cardAccent transition-colors shadow-xs cursor-pointer"
+                  disabled={isSaving}
+                  className="px-6 py-2.5 bg-cardHeader text-white font-semibold text-sm rounded-xl hover:bg-cardAccent transition-colors shadow-xs cursor-pointer disabled:opacity-60"
                 >
-                  {slideToEdit ? "Update Slide" : "Save Slide"}
+                  {isSaving ? "Saving…" : slideToEdit ? "Update Slide" : "Save Slide"}
                 </button>
               </div>
             </form>

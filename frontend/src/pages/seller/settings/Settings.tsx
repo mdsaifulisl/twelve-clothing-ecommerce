@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Save,
   Store,
@@ -20,11 +20,19 @@ import { TelegramSettings } from "./comp/TelegramSettings";
 import { DeliverySettings } from "./comp/DeliverySettings";
 import { PaymentSettings } from "./comp/PaymentSettings";
 import { SecuritySettings } from "./comp/SecuritySettings";
+import { useSettings } from "../../../features/settings/useSettings";
+import type { SettingsSection } from "../../../features/settings/settingsType";
+import { useAppDispatch } from "../../../app/hooks";
+import { showAlertModal } from "../../../features/alert/alertSlice";
+
+const toAssetUrl = (path: string) => path.startsWith("http") ? path : `http://localhost:5001${path}`;
 
 // ইউজারের সম্ভাব্য রোলসমূহ
 export type UserRole = "Admin" | "Moderator" | "Editor" | "Support";
 
 export const Settings: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const settingsApi = useSettings();
   // উদাহরণ হিসেবে বর্তমান লগইন করা ইউজারের রোল (Auth/Session context থেকে আসবে)
   const [currentUserRole] = useState<UserRole>("Admin");
 
@@ -36,7 +44,8 @@ export const Settings: React.FC = () => {
     "general" | "seo" | "branding" | "telegram" | "delivery" | "payment" | "security"
   >(isAdmin ? "general" : isModerator ? "delivery" : "security");
 
-  const [isSaved, setIsSaved] = useState(false);
+  const [logoFile, setLogoFile] = useState<File>();
+  const [faviconFile, setFaviconFile] = useState<File>();
 
   // সেটিংস স্টেটসমূহ (সোশ্যাল মিডিয়া লিঙ্কসহ আপডেট করা হয়েছে)
 const [storeInfo, setStoreInfo] = useState({
@@ -64,6 +73,7 @@ const [storeInfo, setStoreInfo] = useState({
 
   const [telegram, setTelegram] = useState({
     botToken: "",
+    botTokenConfigured: false,
     chatId: "",
     notifyOnNewOrder: true,
   });
@@ -86,29 +96,61 @@ const [storeInfo, setStoreInfo] = useState({
     confirmPassword: "",
   });
 
-  // টেলিগ্রাম টেস্ট
+  useEffect(() => { void settingsApi.load(); }, [settingsApi.load]);
+
+  useEffect(() => {
+    if (settingsApi.error) {
+      dispatch(showAlertModal({ message: settingsApi.error, type: "error", isToast: true }));
+    }
+  }, [dispatch, settingsApi.error]);
+
+  useEffect(() => {
+    const data = settingsApi.data;
+    if (!data) return;
+    setStoreInfo(data.general);
+    setSeoInfo(data.seo);
+    setLogoPreview(data.branding.logoUrl ? toAssetUrl(data.branding.logoUrl) : "");
+    setFaviconPreview(data.branding.faviconUrl ? toAssetUrl(data.branding.faviconUrl) : "");
+    setTelegram((current) => ({ ...current, botToken: "", botTokenConfigured: data.telegram.botTokenConfigured, chatId: data.telegram.chatId, notifyOnNewOrder: data.telegram.notifyOnNewOrder }));
+    setDelivery(data.delivery);
+    setPayment(data.payment);
+  }, [settingsApi.data]);
+
   const handleTestTelegram = async () => {
-    if (!telegram.botToken || !telegram.chatId) {
-      alert("Please provide Bot Token and Chat ID first.");
+    if (telegram.botToken.trim() || telegram.chatId !== settingsApi.data?.telegram.chatId) {
+      dispatch(showAlertModal({ message: "Save the Telegram settings before sending a test alert.", type: "info", isToast: true }));
       return;
     }
     try {
-      const message = encodeURIComponent("🎉 *Twelve Clothing Test Alert*\nBot connected successfully!");
-      const res = await fetch(
-        `https://api.telegram.org/bot${telegram.botToken}/sendMessage?chat_id=${telegram.chatId}&text=${message}&parse_mode=Markdown`
-      );
-      const data = await res.json();
-      if (data.ok) alert("✅ Test message sent to Telegram!");
-      else alert("❌ Error: Check Bot Token & Chat ID.");
+      const message = await settingsApi.testTelegramAlert();
+      dispatch(showAlertModal({ message, type: "success", isToast: true }));
     } catch {
-      alert("❌ Failed to reach Telegram API.");
+      // The Redux error state is surfaced through the shared custom alert effect.
     }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    if (activeTab === "security") return;
+    try {
+      if (activeTab === "branding") {
+        await settingsApi.saveBranding(logoFile, faviconFile);
+        setLogoFile(undefined);
+        setFaviconFile(undefined);
+        dispatch(showAlertModal({ message: "Branding settings saved successfully.", type: "success", isToast: true }));
+        return;
+      }
+      const section = activeTab as SettingsSection;
+      const payload = section === "general" ? storeInfo
+        : section === "seo" ? seoInfo
+        : section === "telegram" ? { botToken: telegram.botToken, chatId: telegram.chatId, notifyOnNewOrder: telegram.notifyOnNewOrder }
+        : section === "delivery" ? delivery
+        : payment;
+      await settingsApi.save(section, payload);
+      dispatch(showAlertModal({ message: "Settings saved successfully.", type: "success", isToast: true }));
+    } catch {
+      // The Redux error state is surfaced through the shared custom alert effect.
+    }
   };
 
   /**
@@ -143,13 +185,15 @@ const [storeInfo, setStoreInfo] = useState({
           </p>
         </div>
 
-        {isSaved && (
+        {settingsApi.saved && (
           <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 text-green-700 text-xs font-bold rounded-xl">
             <CheckCircle2 className="w-4 h-4 text-green-600" />
             <span>Settings saved successfully!</span>
           </div>
         )}
       </div>
+
+      {settingsApi.isLoading && <div className="rounded-xl bg-white px-4 py-3 text-sm text-gray-500">Loading settings…</div>}
 
       {/* রেস্ট্রিকশন অ্যালার্ট বার্তা (অ্যাডমিন ছাড়া অন্যান্য রোলের জন্য) */}
       {!isAdmin && (
@@ -203,8 +247,8 @@ const [storeInfo, setStoreInfo] = useState({
           <BrandingSettings
             logoPreview={logoPreview}
             faviconPreview={faviconPreview}
-            onLogoChange={(e) => e.target.files?.[0] && setLogoPreview(URL.createObjectURL(e.target.files[0]))}
-            onFaviconChange={(e) => e.target.files?.[0] && setFaviconPreview(URL.createObjectURL(e.target.files[0]))}
+            onLogoChange={(e) => { const file = e.target.files?.[0]; if (file) { setLogoFile(file); setLogoPreview(URL.createObjectURL(file)); } }}
+            onFaviconChange={(e) => { const file = e.target.files?.[0]; if (file) { setFaviconFile(file); setFaviconPreview(URL.createObjectURL(file)); } }}
           />
         )}
 
@@ -213,6 +257,7 @@ const [storeInfo, setStoreInfo] = useState({
             data={telegram}
             onChange={(field, val) => setTelegram({ ...telegram, [field]: val })}
             onTest={handleTestTelegram}
+            isTesting={settingsApi.isTestingTelegram}
           />
         )}
 
@@ -244,10 +289,11 @@ const [storeInfo, setStoreInfo] = useState({
         <div className="pt-4 border-t border-borderLight flex justify-end">
           <button
             type="submit"
-            className="flex items-center gap-2 px-6 py-2.5 bg-cardHeader text-white font-semibold text-sm rounded-xl hover:bg-cardAccent transition-colors shadow-xs cursor-pointer"
+            disabled={settingsApi.isLoading || settingsApi.isSaving || activeTab === "security"}
+            className="flex items-center gap-2 px-6 py-2.5 bg-cardHeader text-white font-semibold text-sm rounded-xl hover:bg-cardAccent transition-colors shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save className="w-4 h-4" />
-            <span>Save Changes</span>
+            <span>{settingsApi.isSaving ? "Saving…" : "Save Changes"}</span>
           </button>
         </div>
       </form>
