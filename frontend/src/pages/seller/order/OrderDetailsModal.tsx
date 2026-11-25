@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { X, ShoppingBag, User, MapPin, Phone, CreditCard, Globe, Calendar, RefreshCw, Fingerprint, Copy, Search } from "lucide-react";

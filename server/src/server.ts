@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import app from './app.js';
 import { connectDB } from './config/prisma.js';
+import { seedDefaultAdminIntoDB } from './services/user.service.js';
 
 dotenv.config();
 
@@ -10,8 +11,9 @@ const startServer = async () => {
   try {
     // ১. ডাটাবেজ কানেক্ট করা
     await connectDB();
+    await seedDefaultAdminIntoDB();
 
-    // ২. এক্সপ্রেস সার্ভার চালু করা
+    
     const localSellerApiEnabled =
       process.env.NODE_ENV === 'development' && process.env.ENABLE_LOCAL_SELLER_API === 'true';
     if (localSellerApiEnabled) {

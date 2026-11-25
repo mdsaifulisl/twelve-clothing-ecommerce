@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import {
   archiveOrderHandler,
   createOrderHandler,
@@ -18,18 +18,81 @@ import {
   orderLookupSchema,
   updateOrderStatusSchema,
 } from '../validations/order.validation.js';
+import { autoActivityLogger } from '../middlewares/activityLogger.middleware.js'; 
+import { authGuard } from '../middlewares/auth.middleware.js'; 
 
 const router = Router();
 
-router.post('/', validate(createOrderSchema), createOrderHandler);
+// ==========================================
+// 🌐 public
+// ==========================================
+
+router.post(
+  '/', 
+  validate(createOrderSchema),  
+  createOrderHandler
+);
+
+
 router.post('/lookup', orderLookupRateLimit, validate(orderLookupSchema), lookupOrderHandler);
 
-// These handlers are intentionally fail-closed until server-side seller auth exists.
-// Keeping the controllers/services ready does not make these endpoints accessible.
-router.get('/', sellerManagementDisabled, validateOrdersQuery, listOrdersHandler);
-router.get('/:id', sellerManagementDisabled, getOrderByIdHandler);
-router.patch('/:id/status', sellerManagementDisabled, validate(updateOrderStatusSchema), updateOrderStatusHandler);
-router.patch('/:id/archive', sellerManagementDisabled, validate(archiveOrderSchema), archiveOrderHandler);
-router.patch('/:id/seen', sellerManagementDisabled, markOrderSeenHandler);
+// ==========================================
+// 🔒 private 
+// ==========================================
+
+
+router.get(
+  '/', 
+  authGuard(), 
+  sellerManagementDisabled, 
+  validateOrdersQuery, 
+  listOrdersHandler
+);
+
+
+router.get(
+  '/:id', 
+  authGuard(),
+  sellerManagementDisabled, 
+  getOrderByIdHandler
+);
+
+
+router.patch(
+  '/:id/status', 
+  authGuard(), 
+  sellerManagementDisabled, 
+  validate(updateOrderStatusSchema), 
+  (req: Request, res: Response, next: NextFunction) => {
+    const orderId = req.params.id || 'Unknown ID';
+    const newStatus = req.body?.status || 'New Status';
+    return autoActivityLogger('Orders', `Updated Order [ID: ${orderId}] Status to ${newStatus}`)(req, res, next);
+  }, 
+  updateOrderStatusHandler
+);
+
+router.patch(
+  '/:id/archive', 
+  authGuard(), 
+  sellerManagementDisabled, 
+  validate(archiveOrderSchema), 
+  (req: Request, res: Response, next: NextFunction) => {
+    const orderId = req.params.id || 'Unknown ID';
+    const newStatus = req.body?.status || 'Archived';
+    return autoActivityLogger('Orders', `Archived Order [ID: ${orderId}] Status to ${newStatus}`)(req, res, next);
+  }, 
+  archiveOrderHandler
+);
+
+router.patch(
+  '/:id/seen', 
+  authGuard(), 
+  // sellerManagementDisabled, 
+  (req: Request, res: Response, next: NextFunction) => {
+    const orderId = req.params.id || 'Unknown ID';
+    return autoActivityLogger('Orders', `Marked Order [ID: ${orderId}] as Seen`)(req, res, next);
+  }, 
+  markOrderSeenHandler
+);
 
 export default router;

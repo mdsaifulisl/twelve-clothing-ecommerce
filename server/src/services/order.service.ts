@@ -295,10 +295,12 @@ const setOrderArchived = async (
 
   const currentlyArchived = current.archivedAt !== null;
   if (currentlyArchived !== archived) {
+    const actorName = actor.actorLabel || actor.actorId || null;
+
     const updated = await tx.order.update({
       where: { id },
       data: archived
-        ? { archivedAt: new Date(), archivedBy: actor.actorId ?? actor.actorLabel ?? null }
+        ? { archivedAt: new Date(), archivedBy: actorName }
         : { archivedAt: null, archivedBy: null },
     });
     await tx.orderAuditLog.create({
@@ -336,11 +338,13 @@ export const markOrderSeen = async (id: string, actor: AuditActor) =>
 
     if (!current.seenAt) {
       const seenAt = new Date();
+      const seenByValue = actor.actorLabel || actor.actorId || null;
+
       await tx.order.update({
         where: { id },
         data: {
           seenAt,
-          seenBy: actor.actorId ?? actor.actorLabel ?? null,
+          seenBy: seenByValue,
         },
       });
       await tx.orderAuditLog.create({
@@ -351,7 +355,7 @@ export const markOrderSeen = async (id: string, actor: AuditActor) =>
           actorLabel: actor.actorLabel ?? null,
           requestIp: actor.requestIp?.slice(0, 45) || null,
           oldValue: { seenAt: null, seenBy: null },
-          newValue: { seenAt: seenAt.toISOString(), seenBy: actor.actorId ?? actor.actorLabel ?? null },
+          newValue: { seenAt: seenAt.toISOString(), seenBy: seenByValue },
         },
       });
     }

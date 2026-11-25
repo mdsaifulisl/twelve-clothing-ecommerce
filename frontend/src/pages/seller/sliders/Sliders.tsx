@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { Plus, Trash2, Edit, Upload, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Plus, Trash2, Edit, Upload, X, ShieldAlert } from "lucide-react";
 import { useAppDispatch } from "../../../app/hooks";
 import { showAlertModal } from "../../../features/alert/alertSlice";
 import { openModal } from "../../../features/alert/modalSlice";
 import { useSlider } from "../../../features/slider/useSlider";
 import type { BannerSlide } from "../../../features/slider/sliderType";
+import { useAuth } from "../../../features/auth/useAuth";
 
 export const Sliders: React.FC = () => {
+  const { isAdmin } = useAuth(); // 🟢 অ্যাডমিন চেক হুক
   const dispatch = useAppDispatch();
   const { slides, isLoading, isSaving, error, loadSliders, persistSlider, deleteSlide } = useSlider();
   
@@ -43,6 +45,7 @@ export const Sliders: React.FC = () => {
 
   // অ্যাড মডাল ওপেন
   const handleOpenAddModal = () => {
+    if (!isAdmin) return;
     setSlideToEdit(null);
     setFormData({
       title: "",
@@ -57,6 +60,7 @@ export const Sliders: React.FC = () => {
 
   // এডিট মডাল ওপেন
   const handleOpenEditModal = (slide: BannerSlide) => {
+    if (!isAdmin) return;
     setSlideToEdit(slide);
     setFormData({
       title: slide.title,
@@ -71,6 +75,7 @@ export const Sliders: React.FC = () => {
 
   // স্লাইড ডিলিট হ্যান্ডলার
   const handleDelete = (slide: BannerSlide) => {
+    if (!isAdmin) return;
     dispatch(openModal({
       title: "Delete banner slider",
       message: `Are you sure you want to delete “${slide.title}”?`,
@@ -88,6 +93,7 @@ export const Sliders: React.FC = () => {
   // সাবমিট হ্যান্ডলার (অ্যাড অথবা এডিট)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) return;
     if (!formData.title.trim() || (!slideToEdit && !selectedImage)) {
       dispatch(showAlertModal({ message: "Please provide a title and upload an image.", type: "error", isToast: true }));
       return;
@@ -116,20 +122,32 @@ export const Sliders: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl font-bold text-primary">
-            Banner Sliders Management
+            {isAdmin ? "Banner Sliders Management" : "Banner Sliders Preview"}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Manage your store's homepage banner slides, upload images, and edit details.
+            {isAdmin 
+              ? "Manage your store's homepage banner slides, upload images, and edit details." 
+              : "View the current homepage banner slides."}
           </p>
         </div>
-        <button
-          onClick={handleOpenAddModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-cardHeader text-white text-sm font-semibold rounded-xl hover:bg-cardAccent transition-colors shadow-xs cursor-pointer w-full sm:w-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Slide</span>
-        </button>
+        
+        {isAdmin && (
+          <button
+            onClick={handleOpenAddModal}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-cardHeader text-white text-sm font-semibold rounded-xl hover:bg-cardAccent transition-colors shadow-xs cursor-pointer w-full sm:w-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Slide</span>
+          </button>
+        )}
       </div>
+
+      {!isAdmin && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+          <p>You are viewing this section in read-only mode. Only administrators can create, update, or delete banner sliders.</p>
+        </div>
+      )}
 
       {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
 
@@ -172,35 +190,37 @@ export const Sliders: React.FC = () => {
                 </div>
               </div>
 
-              {/* একশন বাটন (Edit & Delete) */}
-              <div className="flex md:flex-col items-center justify-end gap-2 shrink-0 w-full md:w-auto border-t md:border-t-0 pt-3 md:pt-0 border-borderLight">
-                <button
-                  onClick={() => handleOpenEditModal(slide)}
-                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer"
-                  title="Edit Slide"
-                >
-                  <Edit className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(slide)}
-                  disabled={isSaving}
-                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
-                  title="Delete Slide"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
+              {/* একশন বাটন (Edit & Delete) - শুধুমাত্র Admin দেখতে পাবে */}
+              {isAdmin && (
+                <div className="flex md:flex-col items-center justify-end gap-2 shrink-0 w-full md:w-auto border-t md:border-t-0 pt-3 md:pt-0 border-borderLight">
+                  <button
+                    onClick={() => handleOpenEditModal(slide)}
+                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer"
+                    title="Edit Slide"
+                  >
+                    <Edit className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(slide)}
+                    disabled={isSaving}
+                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                    title="Delete Slide"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
             </div>
           ))
         ) : (
           <div className="bg-white p-12 text-center rounded-2xl border border-borderLight text-gray-400 text-sm">
-            No banner slides found. Add a new slide to display on your homepage.
+            No banner slides found. {isAdmin ? "Add a new slide to display on your homepage." : ""}
           </div>
         )}
       </div>
 
-      {/* স্লাইড অ্যাড বা এডিট করার মোডাল */}
-      {isModalOpen && (
+      {/* স্লাইড অ্যাড বা এডিট করার মোডাল (শুধুমাত্র Admin-এর জন্য রেন্ডার হবে) */}
+      {isAdmin && isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl w-full max-w-lg border border-borderLight shadow-xl font-sans">
             <div className="p-6 border-b border-borderLight flex items-center justify-between">

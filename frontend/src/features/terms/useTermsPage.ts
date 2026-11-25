@@ -12,3 +12,4 @@ export const useTermsPage = () => {
 
   return { ...state, fetchContent, saveContent };
 };
+ 

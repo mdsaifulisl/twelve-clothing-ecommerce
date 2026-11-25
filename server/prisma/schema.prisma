@@ -7,6 +7,60 @@ generator client {
   provider = "prisma-client-js"
 }
 
+
+
+enum Role {
+  admin
+  moderator
+  seller
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  password     String
+  phone        String?
+  role         Role       @default(moderator)
+  status       UserStatus @default(active)
+  otp          String?
+  otpExpiresAt DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@map("users")
+}
+
+
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userName  String
+  userRole  String   // "Admin" | "Moderator" | "Editor" | "Support"
+  action    String
+  module    String   // "Orders" | "Products" | "Customers" | "Sliders" | "Team"
+  details   String
+  ipAddress String
+  timestamp DateTime @default(now())
+
+  @@map("activity_logs")
+}
+
+
+
+
+
+
+
+
+
+
+
 model Product {
   id               String   @id @default(uuid())
   title            String
@@ -296,3 +350,5 @@ model OrderAuditLog {
   @@index([orderId, createdAt])
   @@map("order_audit_logs")
 }
+
+

@@ -66,4 +66,4 @@ export const faqSlice = createSlice({
   },
 });
 
-export default faqSlice.reducer;
+export default faqSlice.reducer; 

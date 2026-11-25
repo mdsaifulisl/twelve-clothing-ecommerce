@@ -15,6 +15,10 @@ import settingsReducer from '../features/settings/settingsSlice';
 import termsReducer from '../features/terms/termsSlice';
 import faqReducer from '../features/faq/faqSlice';
 import dashboardReducer from '../features/dashboard/dashboardSlice';
+import logReducer from '../features/logs/logSlice';
+import userReducer from '../features/user/userSlice';
+import authReducer from '../features/auth/authSlice';
+
 
 export const store = configureStore({
   reducer: {
@@ -32,8 +36,9 @@ export const store = configureStore({
     terms: termsReducer,
     faq: faqReducer,
     dashboard: dashboardReducer,
-    
-    
+    user: userReducer,
+    logs: logReducer,
+    auth: authReducer,
   },
 });
 

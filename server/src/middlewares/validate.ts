@@ -93,4 +93,3 @@ export const validate =
       return next(error);
     }
   };
-

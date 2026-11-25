@@ -65,7 +65,19 @@ const fromApiOrder = (order: OrderResponse): Order => ({
 
 export const Orders: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { sellerOrders: apiOrders, sellerOrdersLoading: loading, sellerOrdersError, mutationError, mutationId: busyOrderId, loadSellerOrders, updateStatus, updateArchive, markSeen } = useOrder();
+  
+  const {
+    sellerOrders: apiOrders,
+    sellerOrdersLoading: loading,
+    sellerOrdersError,
+    mutationError,
+    mutationId: busyOrderId,
+    loadSellerOrders,
+    updateStatus,
+    updateArchive,
+    markSeen,
+  } = useOrder();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "All">("All");
   const [archiveFilter, setArchiveFilter] = useState<"false" | "true" | "all">("false");
@@ -105,7 +117,12 @@ export const Orders: React.FC = () => {
         try {
           await updateArchive(order.id, archived);
           if (selectedOrder?.id === order.id) setIsModalOpen(false);
-          loadSellerOrders({ ...(statusFilter !== "All" ? { status: statusFilter } : {}), ...(searchTerm.trim() ? { search: searchTerm.trim() } : {}), archived: archiveFilter, limit: 100 });
+          loadSellerOrders({
+            ...(statusFilter !== "All" ? { status: statusFilter } : {}),
+            ...(searchTerm.trim() ? { search: searchTerm.trim() } : {}),
+            archived: archiveFilter,
+            limit: 100,
+          });
           dispatch(showAlertModal({ message: archived ? "Order archived." : "Order restored.", type: "success", isToast: true }));
         } catch (cause) {
           dispatch(showAlertModal({ message: String(cause), type: "error", isToast: true }));
@@ -115,11 +132,13 @@ export const Orders: React.FC = () => {
   };
 
   // ভিউ ডিটেইলস এবং "Seen By" আপডেট করার হ্যান্ডলার
-  const handleViewDetails = async (order: Order) => {
+const handleViewDetails = async (order: Order) => {
     setSelectedOrder(order);
     setIsModalOpen(true);
+
     if (!order.seenBy) {
       try {
+        // 🟢 শুধুমাত্র ১টি আর্গুমেন্ট (order.id) পাঠান
         const seenOrder = fromApiOrder(await markSeen(order.id));
         setSelectedOrder(seenOrder);
       } catch (cause) {
@@ -168,7 +187,7 @@ export const Orders: React.FC = () => {
           type="button"
           onClick={handleRefreshOrders}
           disabled={loading}
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-borderLight bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-xs transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-borderLight bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-xs transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
           aria-label="Refresh orders"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -202,17 +221,31 @@ export const Orders: React.FC = () => {
             <option value="DELIVERED">Delivered</option>
             <option value="CANCELLED">Cancelled</option>
           </select>
-          <select value={archiveFilter} onChange={(e) => setArchiveFilter(e.target.value as "false" | "true" | "all")} className="w-full sm:w-40 bg-surface border border-borderLight text-sm text-gray-700 py-2 px-3 rounded-xl outline-none focus:border-cardHeader transition-colors cursor-pointer">
-            <option value="false">Active Orders</option><option value="true">Archived Orders</option><option value="all">All Orders</option>
+          <select
+            value={archiveFilter}
+            onChange={(e) => setArchiveFilter(e.target.value as "false" | "true" | "all")}
+            className="w-full sm:w-40 bg-surface border border-borderLight text-sm text-gray-700 py-2 px-3 rounded-xl outline-none focus:border-cardHeader transition-colors cursor-pointer"
+          >
+            <option value="false">Active Orders</option>
+            <option value="true">Archived Orders</option>
+            <option value="all">All Orders</option>
           </select>
         </div>
       </div>
 
-      {(sellerOrdersError || mutationError) && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{sellerOrdersError || mutationError}</div>}
+      {(sellerOrdersError || mutationError) && (
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {sellerOrdersError || mutationError}
+        </div>
+      )}
 
       {/* MOBILE VIEW: কার্ড লেআউট */}
       <div className="grid grid-cols-1 gap-4 md:hidden">
-        {loading ? <div className="bg-white p-8 text-center rounded-2xl border border-borderLight text-gray-400 text-sm">Loading orders…</div> : filteredOrders.length > 0 ? (
+        {loading ? (
+          <div className="bg-white p-8 text-center rounded-2xl border border-borderLight text-gray-400 text-sm">
+            Loading orders…
+          </div>
+        ) : filteredOrders.length > 0 ? (
           filteredOrders.map((order) => (
             <div
               key={order.id}
@@ -314,9 +347,13 @@ export const Orders: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-borderLight text-sm text-gray-700">
-        {loading ? (
-          <tr><td colSpan={6} className="py-12 text-center text-gray-400 text-sm">Loading orders…</td></tr>
-        ) : filteredOrders.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-gray-400 text-sm">
+                    Loading orders…
+                  </td>
+                </tr>
+              ) : filteredOrders.length > 0 ? (
                 filteredOrders.map((order) => (
                   <tr
                     key={order.id}
@@ -452,4 +489,3 @@ export const Orders: React.FC = () => {
 };
 
 export default Orders;
-

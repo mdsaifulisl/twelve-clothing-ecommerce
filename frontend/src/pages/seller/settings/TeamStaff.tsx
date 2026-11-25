@@ -1,112 +1,100 @@
-import React, { useState, useMemo } from "react";
-import { Search, Plus, ShieldCheck, Mail, Phone, Edit, Trash2, X, UserCheck, UserX } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Search, Plus, ShieldCheck, Mail, Phone, Edit, Trash2, X, UserCheck, UserX, Loader2, ShieldAlert } from "lucide-react";
+import { useUser } from "../../../features/user/useUser";
+import type { IUser } from "../../../features/user/userType";
 
-export interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: "Admin" | "Moderator" | "Editor" | "Support";
-  status: "Active" | "Inactive";
-  joinedDate: string;
-  lastActive: string;
-  permissions: string[];
-}
-
-const INITIAL_TEAM: TeamMember[] = [
-  {
-    id: "ADM-101",
-    name: "তানভীর আহমেদ",
-    email: "tanvir@twelveclothing.com",
-    phone: "+880 1700-112233",
-    role: "Admin",
-    status: "Active",
-    joinedDate: "01 Jan, 2026",
-    lastActive: "Just now",
-    permissions: ["Full Access", "Product Control", "Orders Management", "Team Control"],
-  },
-  {
-    id: "MOD-102",
-    name: "সাকিব হাসান",
-    email: "sakib@twelveclothing.com",
-    phone: "+880 1811-445566",
-    role: "Moderator",
-    status: "Active",
-    joinedDate: "15 Feb, 2026",
-    lastActive: "10 mins ago",
-    permissions: ["Orders Management", "Customer View", "Status Update"],
-  },
-  {
-    id: "EDT-103",
-    name: "মরিয়ম বেগম",
-    email: "moriyom@twelveclothing.com",
-    phone: "+880 1922-778899",
-    role: "Editor",
-    status: "Active",
-    joinedDate: "10 Mar, 2026",
-    lastActive: "2 hours ago",
-    permissions: ["Product CRUD", "Slider Management"],
-  },
-  {
-    id: "SUP-104",
-    name: "কামরুল ইসলাম",
-    email: "kamrul@twelveclothing.com",
-    phone: "+880 1633-001122",
-    role: "Support",
-    status: "Inactive",
-    joinedDate: "01 Apr, 2026",
-    lastActive: "3 days ago",
-    permissions: ["Orders View Only", "Customer Support"],
-  },
-];
+import { useAppDispatch } from "../../../app/hooks";
+import { openModal } from "../../../features/alert/modalSlice";
+import { useAuth } from "../../../features/auth/useAuth";
 
 export const TeamStaff: React.FC = () => {
-  const [team, setTeam] = useState<TeamMember[]>(INITIAL_TEAM);
+  const { isAdmin } = useAuth(); 
+  const dispatch = useAppDispatch();
+  const {
+    users,
+    isLoading,
+    error, 
+    fetchAllUsers,
+    addNewUser,
+    editUser,
+    removeUser,
+  } = useUser();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("All");
 
   // মোডাল স্টেট
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [memberToEdit, setMemberToEdit] = useState<TeamMember | null>(null);
+  const [memberToEdit, setMemberToEdit] = useState<IUser | null>(null);
 
   // ফর্ম স্টেট
-  const [formData, setFormData] = useState<Partial<TeamMember>>({
+  const [formData, setFormData] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    role: "admin" | "moderator" | "seller";
+    status: "active" | "inactive";
+  }>({
     name: "",
     email: "",
     phone: "",
-    role: "Moderator",
-    status: "Active",
+    role: "moderator",
+    status: "active",
   });
+
+  // কম্পোনেন্ট মাউন্ট হওয়ার পর এবং Admin হলে ইউজার ফেচ করা
+  useEffect(() => {
+    if (isAdmin) {
+      fetchAllUsers();
+    }
+  }, [isAdmin]);
 
   // সার্চ ও রোল ফিল্টার
   const filteredTeam = useMemo(() => {
-    return team.filter((member) => {
+    if (!Array.isArray(users)) return [];
+    return users.filter((member) => {
       const matchesSearch =
         member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.phone.includes(searchTerm) ||
+        (member.phone && member.phone.includes(searchTerm)) ||
         member.id.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesRole = selectedRole === "All" || member.role === selectedRole;
+      const matchesRole = selectedRole === "All" || member.role.toLowerCase() === selectedRole.toLowerCase();
 
       return matchesSearch && matchesRole;
     });
-  }, [team, searchTerm, selectedRole]);
+  }, [users, searchTerm, selectedRole]);
 
   // স্ট্যাটাস টগল (Active/Inactive)
-  const toggleStatus = (id: string) => {
-    setTeam((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, status: m.status === "Active" ? "Inactive" : "Active" } : m
-      )
-    );
+  const toggleStatus = async (member: IUser) => {
+    if (!isAdmin) return;
+    try {
+      const newStatus = member.status === "active" ? "inactive" : "active";
+      await editUser(member.id, { status: newStatus });
+      fetchAllUsers();
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
   };
 
   // ডিলিট মেম্বার
-  const handleDelete = (id: string) => {
-    if (window.confirm("Are you sure you want to remove this staff member?")) {
-      setTeam((prev) => prev.filter((m) => m.id !== id));
-    }
+  const handleDelete = async (id: string, name: string, email: string) => {
+    if (!isAdmin) return;
+
+    dispatch(
+      openModal({
+        title: "Delete User Confirmation",
+        message: `Are you sure you want to delete "${name}" (${email})? This action cannot be undone.`,
+        onConfirm: async () => {
+          try {
+            await removeUser(id);
+            fetchAllUsers();
+          } catch (error) {
+            console.error("Failed to delete user:", error);
+          }
+        },
+      })
+    );
   };
 
   // মোডাল ওপেন
@@ -116,66 +104,56 @@ export const TeamStaff: React.FC = () => {
       name: "",
       email: "",
       phone: "",
-      role: "Moderator",
-      status: "Active",
+      role: "moderator",
+      status: "active",
     });
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (member: TeamMember) => {
+  const handleOpenEditModal = (member: IUser) => {
     setMemberToEdit(member);
-    setFormData(member);
+    setFormData({
+      name: member.name,
+      email: member.email,
+      phone: member.phone || "",
+      role: member.role,
+      status: member.status,
+    });
     setIsModalOpen(true);
   };
 
-  // সাবমিট হ্যান্ডলার
-  const handleSubmit = (e: React.FormEvent) => {
+  // সাবমিট হ্যান্ডলার (Create & Update)
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const getPermissionsByRole = (role: string) => {
-      switch (role) {
-        case "Admin":
-          return ["Full Access", "Product Control", "Orders Management", "Team Control"];
-        case "Moderator":
-          return ["Orders Management", "Customer View", "Status Update"];
-        case "Editor":
-          return ["Product CRUD", "Slider Management"];
-        case "Support":
-          return ["Orders View Only", "Customer Support"];
-        default:
-          return ["Basic Access"];
+    try {
+      if (memberToEdit) {
+        await editUser(memberToEdit.id, formData);
+      } else {
+        await addNewUser(formData);
       }
-    };
-
-    if (memberToEdit) {
-      setTeam((prev) =>
-        prev.map((m) =>
-          m.id === memberToEdit.id
-            ? {
-                ...m,
-                ...formData,
-                permissions: getPermissionsByRole(formData.role || "Moderator"),
-              } as TeamMember
-            : m
-        )
-      );
-    } else {
-      const newMember: TeamMember = {
-        id: `STF-${Math.floor(100 + Math.random() * 900)}`,
-        name: formData.name || "New Staff",
-        email: formData.email || "staff@twelveclothing.com",
-        phone: formData.phone || "+880 1700-000000",
-        role: (formData.role as TeamMember["role"]) || "Moderator",
-        status: (formData.status as TeamMember["status"]) || "Active",
-        joinedDate: "18 Oct, 2026",
-        lastActive: "Never",
-        permissions: getPermissionsByRole(formData.role || "Moderator"),
-      };
-      setTeam((prev) => [newMember, ...prev]);
+      setIsModalOpen(false);
+      fetchAllUsers();
+    } catch (err) {
+      console.error("Failed to save user:", err);
     }
-
-    setIsModalOpen(false);
   };
+
+  // 🟢 যদি ইউজার Admin না হয়, তবে রেস্ট্রিক্টেড এক্সেস মেসেজ দেখাবে
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
+        <div className="bg-red-50 border border-red-200 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-xs">
+          <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-bold text-primary">Access Denied</h2>
+          <p className="text-xs text-gray-600 leading-relaxed">
+            Team and staff management features contain sensitive administrative controls. Only administrators are authorized to view and modify this page.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 font-sans pb-10">
@@ -198,6 +176,13 @@ export const TeamStaff: React.FC = () => {
         </button>
       </div>
 
+      {/* এরর বা লোডিং স্টেট */}
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">
+          {error}
+        </div>
+      )}
+
       {/* সার্চ ও ফিল্টার বার */}
       <div className="bg-white p-4 rounded-2xl border border-borderLight shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:w-80">
@@ -216,209 +201,184 @@ export const TeamStaff: React.FC = () => {
           <select
             value={selectedRole}
             onChange={(e) => setSelectedRole(e.target.value)}
-            className="w-full sm:w-48 bg-surface border border-borderLight text-sm text-gray-700 py-2 px-3 rounded-xl outline-none focus:border-cardHeader transition-colors cursor-pointer"
+            className="w-full sm:w-48 bg-surface border border-borderLight text-sm text-gray-700 py-2 px-3 rounded-xl outline-none focus:border-cardHeader transition-colors cursor-pointer capitalize"
           >
             <option value="All">All Roles</option>
-            <option value="Admin">Admin</option>
-            <option value="Moderator">Moderator</option>
-            <option value="Editor">Editor</option>
-            <option value="Support">Support</option>
+            <option value="admin">Admin</option>
+            <option value="moderator">Moderator</option>
+            <option value="seller">Seller</option>
           </select>
         </div>
       </div>
 
-      {/* MOBILE VIEW: কার্ড লেআউট */}
-      <div className="grid grid-cols-1 gap-4 md:hidden">
-        {filteredTeam.length > 0 ? (
-          filteredTeam.map((member) => (
-            <div
-              key={member.id}
-              className="bg-white p-4 rounded-2xl border border-borderLight shadow-xs space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-bold text-primary">{member.id}</span>
-                <span
-                  className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
-                    member.role === "Admin"
-                      ? "bg-purple-100 text-purple-700"
-                      : member.role === "Moderator"
-                      ? "bg-blue-100 text-blue-700"
-                      : member.role === "Editor"
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {member.role}
-                </span>
-              </div>
-
-              <div className="space-y-1">
-                <h4 className="font-semibold text-primary text-sm">{member.name}</h4>
-                <p className="text-xs text-gray-500 flex items-center gap-1">
-                  <Mail className="w-3.5 h-3.5 text-gray-400" /> {member.email}
-                </p>
-                <p className="text-xs text-gray-500 flex items-center gap-1">
-                  <Phone className="w-3.5 h-3.5 text-gray-400" /> {member.phone}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-1 pt-2 border-t border-borderLight">
-                {member.permissions.map((perm, idx) => (
-                  <span
-                    key={idx}
-                    className="text-[10px] font-medium bg-surface text-gray-600 px-2 py-0.5 rounded border border-borderLight"
-                  >
-                    {perm}
-                  </span>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-borderLight text-xs">
-                <button
-                  onClick={() => toggleStatus(member.id)}
-                  className={`flex items-center gap-1 font-bold ${
-                    member.status === "Active" ? "text-green-600" : "text-gray-400"
-                  }`}
-                >
-                  {member.status === "Active" ? (
-                    <>
-                      <UserCheck className="w-3.5 h-3.5" /> Active
-                    </>
-                  ) : (
-                    <>
-                      <UserX className="w-3.5 h-3.5" /> Inactive
-                    </>
-                  )}
-                </button>
-
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleOpenEditModal(member)}
-                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(member.id)}
-                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="bg-white p-8 text-center rounded-2xl border border-borderLight text-gray-400 text-sm">
-            No team members found.
-          </div>
-        )}
-      </div>
-
-      {/* DESKTOP VIEW: টেবিল লেআউট */}
-      <div className="hidden md:block bg-white rounded-2xl border border-borderLight shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-surface text-gray-500 text-xs uppercase tracking-wider border-b border-borderLight">
-                <th className="py-4 px-6">Staff Member</th>
-                <th className="py-4 px-6">Role</th>
-                <th className="py-4 px-6">Contact Details</th>
-                <th className="py-4 px-6">Permissions</th>
-                <th className="py-4 px-6">Status / Last Active</th>
-                <th className="py-4 px-6 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-borderLight text-sm text-gray-700">
-              {filteredTeam.length > 0 ? (
-                filteredTeam.map((member) => (
-                  <tr key={member.id} className="hover:bg-surface/50 transition-colors">
-                    <td className="py-4 px-6">
-                      <span className="font-bold text-primary block">{member.name}</span>
-                      <span className="text-xs font-mono text-gray-400">{member.id}</span>
-                    </td>
-
-                    <td className="py-4 px-6">
-                      <span
-                        className={`text-xs font-bold px-2.5 py-1 rounded-full inline-block ${
-                          member.role === "Admin"
-                            ? "bg-purple-50 text-purple-700 border border-purple-200"
-                            : member.role === "Moderator"
-                            ? "bg-blue-50 text-blue-700 border border-blue-200"
-                            : member.role === "Editor"
-                            ? "bg-amber-50 text-amber-700 border border-amber-200"
-                            : "bg-gray-50 text-gray-700 border border-gray-200"
-                        }`}
-                      >
-                        {member.role}
-                      </span>
-                    </td>
-
-                    <td className="py-4 px-6">
-                      <span className="text-xs font-medium text-gray-700 block">{member.email}</span>
-                      <span className="text-xs text-gray-400 block">{member.phone}</span>
-                    </td>
-
-                    <td className="py-4 px-6">
-                      <div className="flex flex-wrap gap-1 max-w-xs">
-                        {member.permissions.map((perm, idx) => (
-                          <span
-                            key={idx}
-                            className="text-[10px] font-medium bg-surface text-gray-600 px-2 py-0.5 rounded border border-borderLight"
-                          >
-                            {perm}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-
-                    <td className="py-4 px-6">
-                      <button
-                        onClick={() => toggleStatus(member.id)}
-                        className={`text-xs font-bold px-2.5 py-1 rounded-full cursor-pointer transition-colors block mb-1 ${
-                          member.status === "Active"
-                            ? "bg-green-100 text-green-700 hover:bg-green-200"
-                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                        }`}
-                      >
-                        {member.status}
-                      </button>
-                      <span className="text-[11px] text-gray-400 block">
-                        Active: {member.lastActive}
-                      </span>
-                    </td>
-
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          title="Edit Staff"
-                          onClick={() => handleOpenEditModal(member)}
-                          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          title="Remove Staff"
-                          onClick={() => handleDelete(member.id)}
-                          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-gray-400 text-sm">
-                    No staff members found matching your search.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {isLoading && users.length === 0 ? (
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-cardHeader" />
         </div>
-      </div>
+      ) : (
+        <>
+          {/* MOBILE VIEW: কার্ড লেআউট */}
+          <div className="grid grid-cols-1 gap-4 md:hidden">
+            {filteredTeam.length > 0 ? (
+              filteredTeam.map((member) => (
+                <div
+                  key={member.id}
+                  className="bg-white p-4 rounded-2xl border border-borderLight shadow-xs space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono font-bold text-primary">{`#${member.id.slice(0, 8)}`}</span>
+                    <span
+                      className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full capitalize ${
+                        member.role === "admin"
+                          ? "bg-purple-100 text-purple-700"
+                          : member.role === "moderator"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {member.role}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-primary text-sm">{member.name}</h4>
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <Mail className="w-3.5 h-3.5 text-gray-400" /> {member.email}
+                    </p>
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <Phone className="w-3.5 h-3.5 text-gray-400" /> {member.phone || "N/A"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-borderLight text-xs">
+                    <button
+                      onClick={() => toggleStatus(member)}
+                      className={`flex items-center gap-1 font-bold capitalize ${
+                        member.status === "active" ? "text-green-600" : "text-gray-400"
+                      }`}
+                    >
+                      {member.status === "active" ? (
+                        <>
+                          <UserCheck className="w-3.5 h-3.5" /> Active
+                        </>
+                      ) : (
+                        <>
+                          <UserX className="w-3.5 h-3.5" /> Inactive
+                        </>
+                      )}
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenEditModal(member)}
+                        className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(member.id, member.name, member.email)}
+                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="bg-white p-8 text-center rounded-2xl border border-borderLight text-gray-400 text-sm">
+                No team members found.
+              </div>
+            )}
+          </div>
+
+          {/* DESKTOP VIEW: টেবিল লেআউট */}
+          <div className="hidden md:block bg-white rounded-2xl border border-borderLight shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-surface text-gray-500 text-xs uppercase tracking-wider border-b border-borderLight">
+                    <th className="py-4 px-6">Staff Member</th>
+                    <th className="py-4 px-6">Role</th>
+                    <th className="py-4 px-6">Contact Details</th>
+                    <th className="py-4 px-6">Status</th>
+                    <th className="py-4 px-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-borderLight text-sm text-gray-700">
+                  {filteredTeam.length > 0 ? (
+                    filteredTeam.map((member) => (
+                      <tr key={member.id} className="hover:bg-surface/50 transition-colors">
+                        <td className="py-4 px-6">
+                          <span className="font-bold text-primary block">{member.name}</span>
+                          <span className="text-xs font-mono text-gray-400">{`#${member.id.slice(0, 8)}`}</span>
+                        </td>
+
+                        <td className="py-4 px-6">
+                          <span
+                            className={`text-xs font-bold px-2.5 py-1 rounded-full inline-block capitalize ${
+                              member.role === "admin"
+                                ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                : member.role === "moderator"
+                                ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                : "bg-amber-50 text-amber-700 border border-amber-200"
+                            }`}
+                          >
+                            {member.role}
+                          </span>
+                        </td>
+
+                        <td className="py-4 px-6">
+                          <span className="text-xs font-medium text-gray-700 block">{member.email}</span>
+                          <span className="text-xs text-gray-400 block">{member.phone || "N/A"}</span>
+                        </td>
+
+                        <td className="py-4 px-6">
+                          <button
+                            onClick={() => toggleStatus(member)}
+                            className={`text-xs font-bold px-2.5 py-1 rounded-full cursor-pointer transition-colors block capitalize ${
+                              member.status === "active"
+                                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                            }`}
+                          >
+                            {member.status}
+                          </button>
+                        </td>
+
+                        <td className="py-4 px-6 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              title="Edit Staff"
+                              onClick={() => handleOpenEditModal(member)}
+                              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              title="Remove Staff"
+                              onClick={() => handleDelete(member.id, member.name, member.email)}
+                              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-gray-400 text-sm">
+                        No staff members found matching your search.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* অ্যাড ও এডিট স্টাফ মডাল */}
       {isModalOpen && (
@@ -430,7 +390,7 @@ export const TeamStaff: React.FC = () => {
                   {memberToEdit ? "Edit Staff Details" : "Add New Staff Member"}
                 </h2>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Configure role and contact credentials for dashboard access.
+                  Configure role and contact credentials for dashboard access. Credentials will be emailed automatically.
                 </p>
               </div>
               <button
@@ -467,10 +427,9 @@ export const TeamStaff: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Phone Number *</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Phone Number</label>
                   <input
                     type="text"
-                    required
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="+880 1700-000000"
@@ -484,13 +443,12 @@ export const TeamStaff: React.FC = () => {
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Select Role *</label>
                   <select
                     value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as TeamMember["role"] })}
-                    className="w-full px-3.5 py-2 bg-surface border border-borderLight rounded-xl text-sm outline-none focus:border-cardHeader cursor-pointer"
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value as IUser["role"] })}
+                    className="w-full px-3.5 py-2 bg-surface border border-borderLight rounded-xl text-sm outline-none focus:border-cardHeader cursor-pointer capitalize"
                   >
-                    <option value="Admin">Admin (Full Control)</option>
-                    <option value="Moderator">Moderator (Orders & Status)</option>
-                    <option value="Editor">Editor (Products & Sliders)</option>
-                    <option value="Support">Support (View Only)</option>
+                    <option value="admin">Admin (Full Control)</option>
+                    <option value="moderator">Moderator (Orders & Status)</option>
+                    <option value="seller">Seller</option>
                   </select>
                 </div>
 
@@ -498,11 +456,11 @@ export const TeamStaff: React.FC = () => {
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Account Status</label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as TeamMember["status"] })}
-                    className="w-full px-3.5 py-2 bg-surface border border-borderLight rounded-xl text-sm outline-none focus:border-cardHeader cursor-pointer"
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as IUser["status"] })}
+                    className="w-full px-3.5 py-2 bg-surface border border-borderLight rounded-xl text-sm outline-none focus:border-cardHeader cursor-pointer capitalize"
                   >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
                   </select>
                 </div>
               </div>
@@ -517,9 +475,10 @@ export const TeamStaff: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-cardHeader text-white font-semibold text-sm rounded-xl hover:bg-cardAccent transition-colors shadow-xs cursor-pointer"
+                  disabled={isLoading}
+                  className="px-6 py-2.5 bg-cardHeader text-white font-semibold text-sm rounded-xl hover:bg-cardAccent transition-colors shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  {memberToEdit ? "Update Member" : "Save Member"}
+                  {isLoading ? "Saving..." : memberToEdit ? "Update Member" : "Save Member"}
                 </button>
               </div>
             </form>

@@ -60,40 +60,45 @@ export const HeroBanner: React.FC = () => {
   };
 
   return (
-    <section className="relative w-full overflow-hidden bg-surface">
+    <section className="relative w-full overflow-hidden bg-gray-900">
       {/* Slider Container */}
       <div 
-        className="flex transition-transform duration-700 ease-out h-[240px] sm:h-[320px] md:h-[420px] lg:h-[500px] xl:h-[600px]"
+        className="flex transition-transform duration-700 ease-out h-[280px] sm:h-[380px] md:h-[480px] lg:h-[550px]"
         style={{ transform: `translateX(-${activeSlideIndex * 100}%)` }}
       >
         {displaySlides.map((slide) => (
-          <div key={slide.id} className="w-full flex-shrink-0 relative h-full overflow-hidden bg-surface">
-            <div className="absolute inset-0 overflow-hidden bg-gray-900" aria-hidden="true">
+          <div key={slide.id} className="w-full flex-shrink-0 relative h-full overflow-hidden bg-gray-900">
+            
+            {/* Background Blur Image for Full Width Fill */}
+            <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
               <img
                 src={slide.image}
                 alt=""
-                className="h-full w-full scale-110 object-cover object-center opacity-50 blur-2xl"
+                className="h-full w-full scale-110 object-cover object-center opacity-40 blur-xl"
               />
             </div>
+
+            {/* Main Image */}
             <img
               src={slide.image}
               alt={slide.title}
-              className="relative z-[1] w-full h-full object-contain object-center"
+              className="relative z-10 w-full h-full object-cover sm:object-contain object-center"
             />
-            {/* Overlay Gradient */}
-            <div className="absolute inset-0 bg-black/20" />
+
+            {/* Dark Gradient Overlay so text is clearly readable */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 z-20" />
 
             {/* Banner Content Container */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-              <h2 className="text-3xl sm:text-5xl md:text-6xl font-extrabold font-heading text-white tracking-wide drop-shadow-md mb-2">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 sm:p-6 z-30">
+              <h2 className="text-2xl sm:text-4xl md:text-6xl font-extrabold font-heading text-white tracking-wide drop-shadow-lg mb-2">
                 {slide.title}
               </h2>
-              <p className="text-sm sm:text-lg text-white/90 font-medium mb-6 drop-shadow">
+              <p className="text-xs sm:text-base md:text-lg text-gray-200 font-medium mb-6 drop-shadow max-w-xl">
                 {slide.subtitle}
               </p>
               <Link
                 to={slide.link}
-                className="bg-[#F26522] hover:bg-[#d95213] text-white font-bold px-8 py-3 rounded-md text-sm md:text-base tracking-widest transition-all transform hover:scale-105 shadow-lg"
+                className="bg-[#F26522] hover:bg-[#d95213] text-white font-bold px-6 sm:px-8 py-2.5 sm:py-3 rounded-md text-xs sm:text-sm md:text-base tracking-widest transition-all transform hover:scale-105 shadow-xl"
               >
                 {slide.buttonText}
               </Link>
@@ -103,37 +108,43 @@ export const HeroBanner: React.FC = () => {
       </div>
 
       {/* Slide Navigation Buttons */}
-      {displaySlides.length > 1 && <>
-        <button
-          onClick={prevSlide}
-          className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/50 hover:bg-white text-primary p-2 rounded-full transition-colors shadow-md"
-          aria-label="Previous Slide"
-        >
-          <ChevronLeft size={24} />
-        </button>
+      {displaySlides.length > 1 && (
+        <>
+          <button
+            onClick={prevSlide}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-900 p-2 rounded-full transition-colors shadow-lg z-40 cursor-pointer"
+            aria-label="Previous Slide"
+          >
+            <ChevronLeft size={22} />
+          </button>
 
-        <button
-          onClick={nextSlide}
-          className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/50 hover:bg-white text-primary p-2 rounded-full transition-colors shadow-md"
-          aria-label="Next Slide"
-        >
-          <ChevronRight size={24} />
-        </button>
-      </>}
+          <button
+            onClick={nextSlide}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-900 p-2 rounded-full transition-colors shadow-lg z-40 cursor-pointer"
+            aria-label="Next Slide"
+          >
+            <ChevronRight size={22} />
+          </button>
+        </>
+      )}
 
       {/* Slide Dots */}
-      {displaySlides.length > 1 && <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-        {displaySlides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentSlide(index)}
-            className={`w-3 h-3 rounded-full transition-all ${
-            activeSlideIndex === index ? 'bg-[#F26522] w-6' : 'bg-white/60'
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
-      </div>}
+      {displaySlides.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-40">
+          {displaySlides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                activeSlideIndex === index ? 'bg-[#F26522] w-6' : 'bg-white/60 w-2.5'
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 };
+
+export default HeroBanner;

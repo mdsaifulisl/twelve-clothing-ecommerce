@@ -1,9 +1,10 @@
 import React from 'react';
 import { useCart } from '../../features/cart/useCart';
 import { ShoppingBag, X, Plus, Minus, Trash2, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export const CartDrawer: React.FC = () => {
+  const navigate = useNavigate();
   const {
     items,
     isOpen,
@@ -32,7 +33,7 @@ export const CartDrawer: React.FC = () => {
             <div className="flex items-center gap-2">
               <ShoppingBag className="text-cardHeader" size={22} />
               <h2 className="text-lg font-bold font-heading text-primary">
-                আপনার কার্ট ({totalQuantity})
+                Your Cart ({totalQuantity})
               </h2>
             </div>
             <button
@@ -48,12 +49,21 @@ export const CartDrawer: React.FC = () => {
             {items.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-gray-500 space-y-3">
                 <ShoppingBag size={48} className="text-gray-300" />
-                <p className="text-base font-medium">আপনার কার্ট খালি!</p>
+                <p className="text-base font-medium">Your cart is empty!</p>
                 <button
-                  onClick={closeCart}
+                  onClick={() => {
+                    
+                    closeCart();
+
+                    setTimeout(() => {
+                      navigate('/items');
+                    }, 300); 
+                    // Delay navigation to allow drawer close animation
+                    // navigate('/items');
+                  }}
                   className="px-4 py-2 bg-cardHeader text-white text-xs font-semibold rounded-lg hover:bg-opacity-90 transition-colors"
                 >
-                  কেনাকাটা করুন
+                  Start Shopping
                 </button>
               </div>
             ) : (

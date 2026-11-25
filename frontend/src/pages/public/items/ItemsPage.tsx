@@ -277,8 +277,8 @@ export const ItemsPage: React.FC = () => {
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-20 bg-gray-50 rounded-xl">
-              <p className="text-base font-semibold text-gray-600">কোনো পণ্য পাওয়া যায়নি!</p>
-              <p className="text-xs text-gray-400 mt-1">ফিল্টারের শর্ত পরিবর্তন করে আবার চেষ্টা করুন।</p>
+              <p className="text-base font-semibold text-gray-600">No products found!</p>
+              <p className="text-xs text-gray-400 mt-1">Please change your filter criteria and try again.</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">

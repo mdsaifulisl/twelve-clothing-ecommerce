@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { MapPin, Phone, Clock, Plus, Trash2, ExternalLink, CalendarX } from 'lucide-react';
+import { MapPin, Phone, Clock, Plus, Trash2, ExternalLink, CalendarX, ShieldAlert } from 'lucide-react';
 import { useAppDispatch } from '../../../app/hooks';
 import { showAlertModal } from '../../../features/alert/alertSlice';
 import { openModal } from '../../../features/alert/modalSlice';
 import { useStoreLocations } from '../../../features/storeLocation/useStoreLocations';
 import type { CreateStoreLocationRequest } from '../../../features/storeLocation/storeLocationType';
+import { useAuth } from '../../../features/auth/useAuth';
 
 export const StoreLocations: React.FC = () => {
+  const { isAdmin } = useAuth(); // 🟢 অ্যাডমিন চেক হুক
   const dispatch = useAppDispatch();
   const { locations, isLoading, isSaving, error, loadLocations, createLocation, deleteLocation } = useStoreLocations();
   const [locationsLoaded, setLocationsLoaded] = useState(false);
@@ -42,6 +44,7 @@ export const StoreLocations: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) return;
     try {
       await createLocation(formData);
       setIsModalOpen(false);
@@ -53,6 +56,7 @@ export const StoreLocations: React.FC = () => {
   };
 
   const handleDelete = (id: string, name: string) => {
+    if (!isAdmin) return;
     dispatch(openModal({
       title: "Delete store location",
       message: `Are you sure you want to delete “${name}”?`,
@@ -72,17 +76,34 @@ export const StoreLocations: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-primary">Store Locations</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage physical outlets and flagship stores across Bangladesh</p>
+          <h1 className="font-heading text-2xl font-bold text-primary">
+            {isAdmin ? "Store Locations Management" : "Store Locations Preview"}
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">
+            {isAdmin 
+              ? "Manage physical outlets and flagship stores across Bangladesh" 
+              : "View physical outlets and flagship stores across Bangladesh"}
+          </p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-cardHeader text-white text-xs font-bold rounded-xl hover:bg-cardAccent transition-all shadow-xs cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New Outlet</span>
-        </button>
+
+        {/* 🟢 শুধুমাত্র Admin নতুন আউটলেট যোগ করার বাটন দেখতে পাবে */}
+        {isAdmin && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-cardHeader text-white text-xs font-bold rounded-xl hover:bg-cardAccent transition-all shadow-xs cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Outlet</span>
+          </button>
+        )}
       </div>
+
+      {!isAdmin && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+          <p>You are viewing this section in read-only mode. Only administrators can add or delete store locations.</p>
+        </div>
+      )}
 
       {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
 
@@ -91,7 +112,7 @@ export const StoreLocations: React.FC = () => {
         {isLoading || !locationsLoaded ? (
           <div className="md:col-span-2 lg:col-span-3 rounded-2xl border border-borderLight bg-white p-10 text-center text-sm text-gray-400">Loading store locations…</div>
         ) : locations.length === 0 ? (
-          <div className="md:col-span-2 lg:col-span-3 rounded-2xl border border-borderLight bg-white p-10 text-center text-sm text-gray-400">No store locations found. Add a new outlet to get started.</div>
+          <div className="md:col-span-2 lg:col-span-3 rounded-2xl border border-borderLight bg-white p-10 text-center text-sm text-gray-400">No store locations found. {isAdmin ? "Add a new outlet to get started." : ""}</div>
         ) : locations.map((loc) => (
           <div key={loc.id} className="bg-white rounded-2xl border border-borderLight p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
             <div className="space-y-3">
@@ -102,11 +123,15 @@ export const StoreLocations: React.FC = () => {
                   </span>
                   <h3 className="font-heading font-bold text-lg text-primary mt-2">{loc.name}</h3>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button disabled={isSaving} onClick={() => handleDelete(loc.id, loc.name)} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors disabled:opacity-50">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                
+                {/* 🟢 শুধুমাত্র Admin ডিলিট করার বাটন দেখতে পাবে */}
+                {isAdmin && (
+                  <div className="flex items-center gap-1">
+                    <button disabled={isSaving} onClick={() => handleDelete(loc.id, loc.name)} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition-colors disabled:opacity-50 cursor-pointer" title="Delete Location">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2 text-xs text-gray-600">
@@ -144,10 +169,10 @@ export const StoreLocations: React.FC = () => {
         ))}
       </div>
 
-      {/* Add Location Modal */}
-      {isModalOpen && (
+      {/* Add Location Modal (শুধুমাত্র Admin-এর জন্য রেন্ডার হবে) */}
+      {isAdmin && isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto font-sans">
             <h2 className="text-lg font-bold text-primary border-b border-borderLight pb-2">Add Store Outlet</h2>
             
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -243,14 +268,14 @@ export const StoreLocations: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => { setIsModalOpen(false); resetForm(); }}
-                  className="px-4 py-2 border border-borderLight rounded-xl text-xs font-bold text-gray-600 hover:bg-surface"
+                  className="px-4 py-2 border border-borderLight rounded-xl text-xs font-bold text-gray-600 hover:bg-surface cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-5 py-2 bg-cardHeader text-white rounded-xl text-xs font-bold hover:bg-cardAccent disabled:opacity-60"
+                  className="px-5 py-2 bg-cardHeader text-white rounded-xl text-xs font-bold hover:bg-cardAccent disabled:opacity-60 cursor-pointer"
                 >
                   {isSaving ? "Saving…" : "Save Store"}
                 </button>

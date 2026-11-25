@@ -16,7 +16,7 @@ import {
   type AuditActor,
   type OrderWithItems,
 } from '../services/order.service.js';
-import {
+import { 
   orderIdSchema,
   ordersQuerySchema,
   type ArchiveOrderInput,
@@ -102,14 +102,21 @@ const parseOrderId = (value: string | string[]) => {
   return parsed.data;
 };
 
-const requireSellerIdentity = (res: Response): AuditActor => {
-  const seller = res.locals.sellerUser as { id?: string; name?: string } | undefined;
-  if (!seller?.id) {
+const requireSellerIdentity = (req: Request, res: Response): AuditActor => {
+  const user = req.user as 
+    | { userId?: string; id?: string; name?: string; email?: string } 
+    | undefined;
+
+  // 🟢 authGuard থেকে আসা userId অথবা id কে রিকগনাইজ করা
+  const sellerId = user?.userId || user?.id;
+
+  if (!sellerId) {
     throw new AppError('Seller authentication is not configured', 503);
   }
+
   return {
-    actorId: seller.id,
-    actorLabel: seller.name ?? null,
+    actorId: sellerId,
+    actorLabel: user?.name || user?.email || 'Admin',
   };
 };
 
@@ -143,7 +150,7 @@ export const lookupOrderHandler = async (req: Request, res: Response) => {
 };
 
 export const listOrdersHandler = async (req: Request, res: Response) => {
-  requireSellerIdentity(res);
+  requireSellerIdentity(req, res);
   const result = await listOrders(res.locals.validatedOrdersQuery);
   return res.status(200).json({
     success: true,
@@ -158,14 +165,14 @@ export const listOrdersHandler = async (req: Request, res: Response) => {
 };
 
 export const getOrderByIdHandler = async (req: Request, res: Response) => {
-  requireSellerIdentity(res);
+  requireSellerIdentity(req, res);
   const id = parseOrderId(req.params.id);
   const order = await getOrderById(id);
   return res.status(200).json({ success: true, data: sellerOrderResponse(req, order) });
 };
 
 export const updateOrderStatusHandler = async (req: Request, res: Response) => {
-  const actor = requireSellerIdentity(res);
+  const actor = requireSellerIdentity(req, res);
   actor.requestIp = req.ip;
   const id = parseOrderId(req.params.id);
   const order = await updateOrderStatus(id, req.body as UpdateOrderStatusInput, actor);
@@ -173,7 +180,7 @@ export const updateOrderStatusHandler = async (req: Request, res: Response) => {
 };
 
 export const archiveOrderHandler = async (req: Request, res: Response) => {
-  const actor = requireSellerIdentity(res);
+  const actor = requireSellerIdentity(req, res);
   actor.requestIp = req.ip;
   const id = parseOrderId(req.params.id);
   const input = req.body as ArchiveOrderInput;
@@ -184,7 +191,7 @@ export const archiveOrderHandler = async (req: Request, res: Response) => {
 };
 
 export const markOrderSeenHandler = async (req: Request, res: Response) => {
-  const actor = requireSellerIdentity(res);
+  const actor = requireSellerIdentity(req, res);
   actor.requestIp = req.ip;
   const id = parseOrderId(req.params.id);
   const order = await markOrderSeen(id, actor);

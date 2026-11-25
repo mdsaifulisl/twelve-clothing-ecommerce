@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Activity,
   FileText,
@@ -13,8 +13,10 @@ import {
   SlidersHorizontal,
   Users,
   X,
+  LogOut,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useAuth } from '../../features/auth/useAuth';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -62,23 +64,38 @@ const sections: Array<{ label: string; links: SidebarLink[] }> = [
 ];
 
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   return (
     <>
+      {/* মোবাইল ব্যাকড্রপ ওভারলে */}
       {isOpen && (
         <button
           type="button"
           aria-label="Close seller navigation"
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
+      {/* সাইডবার কন্টেইনার */}
       <aside
         aria-label="Seller navigation"
         className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-cardAccent text-white shadow-xl transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0`}
       >
+        {/* ১. ফিক্সড হেডার */}
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 px-5">
           <NavLink to="/seller" onClick={() => setIsOpen(false)} className="min-w-0">
             <span className="block truncate font-heading text-lg font-bold tracking-wide text-white">Twelve Clothing</span>
@@ -94,7 +111,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           </button>
         </div>
 
-        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5" aria-label="Seller pages">
+        {/* ২. স্করোল্যাবল মেনু লিস্ট (মাঝের অংশ শুধু স্ক্রোল হবে) */}
+        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5 min-h-0" aria-label="Seller pages">
           {sections.map((section) => (
             <section key={section.label}>
               <h2 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-white/45">{section.label}</h2>
@@ -123,9 +141,20 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           ))}
         </nav>
 
-        <div className="shrink-0 border-t border-white/10 px-5 py-4">
-          <p className="text-xs font-medium text-white/80">Twelve Clothing</p>
-          <p className="mt-1 text-[10px] text-white/45">Store management</p>
+        {/* ৩. ফিক্সড ফুটার এবং লগআউট বাটন (সর্বদা নিচে দৃশ্যমান থাকবে) */}
+        <div className="shrink-0 border-t border-white/10 px-5 py-4 space-y-3 bg-cardAccent">
+          <div>
+            <p className="text-xs font-medium text-white/80">Twelve Clothing</p>
+            <p className="mt-0.5 text-[10px] text-white/45">Store management</p>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-300 hover:bg-red-500/10 hover:text-red-200 transition-colors cursor-pointer"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            <span>Logout</span>
+          </button>
         </div>
       </aside>
     </>

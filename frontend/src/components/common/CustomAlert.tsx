@@ -31,7 +31,7 @@ export const CustomAlert: React.FC = () => {
           borderColor: 'border-green-500',
           bgToast: 'bg-green-50 border border-green-200 text-green-800',
           btnBg: 'bg-green-600 hover:bg-green-700',
-          defaultTitle: 'সফল হয়েছে!',
+          defaultTitle: 'Success!',
         };
       case 'error':
         return {
@@ -39,7 +39,7 @@ export const CustomAlert: React.FC = () => {
           borderColor: 'border-red-500',
           bgToast: 'bg-red-50 border border-red-200 text-red-800',
           btnBg: 'bg-red-600 hover:bg-red-700',
-          defaultTitle: 'সতর্কতা!',
+          defaultTitle: 'Warning!',
         };
       default:
         return {
@@ -47,7 +47,7 @@ export const CustomAlert: React.FC = () => {
           borderColor: 'border-black',
           bgToast: 'bg-gray-50 border border-gray-200 text-primary',
           btnBg: 'bg-black hover:bg-gray-800',
-          defaultTitle: 'তথ্য',
+          defaultTitle: 'Information',
         };
     }
   };

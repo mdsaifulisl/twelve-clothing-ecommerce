@@ -8,7 +8,7 @@ export const fetchProductsAPI = async () => {
 export const fetchProductByIdAPI = async (id: string) => {
   const response = await axiosInstance.get(`/products/${id}`);
   return response.data;
-};
+}; 
 
 export const createProductAPI = async (productData: FormData | object) => {
   const response = await axiosInstance.post('/products', productData, {
@@ -28,3 +28,4 @@ export const deleteProductAPI = async (id: string) => {
   const response = await axiosInstance.delete(`/products/${id}`);
   return response.data;
 };
+

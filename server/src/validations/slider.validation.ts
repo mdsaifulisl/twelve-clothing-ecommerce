@@ -8,8 +8,23 @@ const imageValue = (required: boolean) => z.preprocess(
 );
 
 const linkSchema = z.string().trim().min(1).max(2048).refine(
-  (value) => value.startsWith('/') && !value.startsWith('//') && !value.includes('\\'),
-  'Link must be an internal path starting with /',
+  (value) => {
+    // ১. ইন্টারনাল পাথ চেক (যেমন: /items?category=All)
+    const isInternalPath = value.startsWith('/') && !value.startsWith('//') && !value.includes('\\');
+    
+    // ২. অথবা ভ্যালিড ফুল URL চেক (যেমন: http://localhost:5173/... বা https://...)
+    let isValidUrl = false;
+    try {
+      const parsedUrl = new URL(value);
+      isValidUrl = parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+    } catch {
+      isValidUrl = false;
+    }
+
+    // যেকোনো একটি সত্য হলেই পাস করবে
+    return isInternalPath || isValidUrl;
+  },
+  'Link must be a valid internal path (starting with /) or a valid HTTP/HTTPS URL',
 );
 
 export const createSliderSchema = z.object({

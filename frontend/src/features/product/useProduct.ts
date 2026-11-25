@@ -25,7 +25,7 @@ export const useProduct = () => {
 };
 
 const editProduct = async (id: string, productData: FormData | object) => {
-  return await dispatch(updateProduct({ id, productData })).unwrap();
+  return await dispatch(updateProduct({ id, productData })).unwrap(); 
 };
 
   const removeProduct = async (id: string) => {

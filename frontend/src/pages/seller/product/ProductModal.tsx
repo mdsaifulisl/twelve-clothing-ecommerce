@@ -22,8 +22,12 @@ const generateSKU = (cat: string, sub: string, col: string) => {
   const c = (cat || "GEN").slice(0, 3).toUpperCase();
   const s = (sub || "PRD").slice(0, 3).toUpperCase();
   const cl = (col || "CLR").slice(0, 3).toUpperCase();
-  const randomNum = Math.floor(100 + Math.random() * 900);
-  return `RA-${c}-${s}-TW26-${randomNum}-${cl}`;
+  
+  // সময় এবং বড় র্যান্ডম সংখ্যা ব্যবহার করে ডুপ্লিকেট রোধ করা
+  const timestampPart = Date.now().toString().slice(-4);
+  const randomNum = Math.floor(1000 + Math.random() * 9000); // ৪ ডিজিট
+
+  return `RA-${c}-${s}-${timestampPart}-${randomNum}-${cl}`;
 };
 
 export const ProductModal: React.FC<ProductModalProps> = ({

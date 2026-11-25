@@ -5,7 +5,7 @@ import { useProduct } from "../../../features/product/useProduct";
 import type { IProduct } from "../../../features/product/ProductType";
 import { useAppDispatch } from "../../../app/hooks";
 import { openModal } from "../../../features/alert/modalSlice";
-import productData from "../../../data/products.json"; // 🚀 আপনার ফেক ডাটা ইম্পোর্ট করা হলো
+import productData from "../../../data/products.json"; 
 
 export const Products: React.FC = () => {
   const dispatch = useAppDispatch();

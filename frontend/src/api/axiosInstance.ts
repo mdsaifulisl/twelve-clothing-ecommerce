@@ -9,11 +9,10 @@ const getCookie = (name: string): string | null => {
 };
 
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: 'http://localhost:5001/api/v1',
-  // baseURL: '/api/v1',
-
-  timeout: 5000,
+  // baseURL: 'http://localhost:5001/api/v1',
+  baseURL: '/api/v1',
   withCredentials: true,
+  timeout: 15000, 
   headers: {
     'Content-Type': 'application/json',
   },
@@ -38,3 +37,4 @@ axiosInstance.interceptors.request.use(
 );
 
 export default axiosInstance;
+

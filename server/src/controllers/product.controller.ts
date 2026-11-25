@@ -108,7 +108,6 @@ export const getProductByIdHandler = async (req: Request, res: Response) => {
 // Update Product handler
 export const updateProductHandler = async (req: Request, res: Response) => {
 
-  console.log( "UpdateController", req.body)
 
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -189,3 +188,5 @@ export const deleteProductHandler = async (req: Request, res: Response) => {
     });
   }
 };
+
+
